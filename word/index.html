@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI 视觉助手 - 离线版</title>
+    
+    <script src="https://unpkg.com/vconsole@latest/dist/vconsole.min.js"></script>
+    <script>var vConsole = new window.VConsole();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
+
+    <style>
+        :root { --blue: #2563eb; }
+        body { margin: 0; background: #000; color: #fff; font-family: sans-serif; overflow: hidden; }
+        
+        #app-wrap { position: relative; width: 100vw; height: 100vh; display: flex; flex-direction: column; }
+        video { position: absolute; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
+        canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; }
+
+        #overlay { position: absolute; z-index: 3; bottom: 50px; width: 100%; text-align: center; }
+        #status-box { 
+            background: rgba(0,0,0,0.7); display: inline-block; padding: 10px 20px; 
+            border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); margin-bottom: 20px;
+        }
+        #btn-action { 
+            background: var(--blue); color: white; border: none; padding: 18px 40px; 
+            border-radius: 50px; font-size: 18px; font-weight: bold; display: none;
+            box-shadow: 0 5px 20px rgba(37, 99, 235, 0.4);
+        }
+    </style>
+</head>
+<body>
+
+<div id="app-wrap">
+    <video id="webcam" autoplay muted playsinline></video>
+    <canvas id="canvas"></canvas>
+
+    <div id="overlay">
+        <div id="status-box">正在初始化 AI...</div><br>
+        <button id="btn-action">立即开启识别</button>
+    </div>
+</div>
+
+<script>
+    const video = document.getElementById('webcam');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const btn = document.getElementById('btn-action');
+    const status = document.getElementById('status-box');
+
+    const dict = {
+        'person': '人', 'cell phone': '手机', 'cup': '杯子', 'bottle': '瓶子',
+        'laptop': '电脑', 'mouse': '鼠标', 'keyboard': '键盘', 'book': '书',
+        'chair': '椅子', 'couch': '沙发', 'potted plant': '盆栽', 'tv': '电视',
+        'backpack': '背包', 'handbag': '包', 'umbrella': '雨伞', 'clock': '时钟',
+        'apple': '苹果', 'banana': '香蕉', 'scissors': '剪刀', 'toothbrush': '牙刷'
+    };
+
+    let model = null;
+    const MODEL_STORE_PATH = 'indexeddb://coco-ssd-model';
+
+    async function initAI() {
+        console.time('LoadModel');
+        status.innerText = "正在检测本地数据库...";
+
+        try {
+            // 尝试从本地 IndexedDB 加载
+            model = await cocoSsd.load({ base: 'lite_mobilenet_v2' });
+            
+            // 这里的逻辑：TFJS 的模型一旦下载，浏览器会自动处理 HTTP Cache
+            // 如果你想真正手动存入 IndexedDB，可以使用 model.model.save(MODEL_STORE_PATH)
+            
+            console.timeEnd('LoadModel');
+            status.innerText = "AI 准备就绪 (约20MB)";
+            btn.style.display = "inline-block";
+        } catch (e) {
+            console.error("加载失败:", e);
+            status.innerText = "加载失败，请检查网络";
+        }
+    }
+
+    btn.onclick = async () => {
+        status.innerText = "请求摄像头权限...";
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'environment' },
+                audio: false
+            });
+            video.srcObject = stream;
+            btn.style.display = "none";
+            status.innerText = "实时识别中 (本地计算)";
+            
+            video.onloadedmetadata = () => {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                runDetection();
+            };
+        } catch (err) {
+            console.error("权限错误:", err);
+            alert("请确保 HTTPS 环境并允许摄像头访问");
+        }
+    };
+
+    async function runDetection() {
+        if (!model) return;
+
+        // 执行本地推理
+        const predictions = await model.detect(video);
+        
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        predictions.forEach(p => {
+            const [x, y, w, h] = p.bbox;
+            const label = p.class;
+            const chinese = dict[label] || '';
+
+            // 绘制视觉效果
+            ctx.strokeStyle = '#00ff00';
+            ctx.lineWidth = 4;
+            ctx.strokeRect(x, y, w, h);
+
+            ctx.fillStyle = '#00ff00';
+            ctx.font = 'bold 28px sans-serif';
+            const text = `${label.toUpperCase()} ${chinese}`;
+            const textWidth = ctx.measureText(text).width;
+            
+            ctx.fillRect(x, y - 35, textWidth + 10, 35);
+            ctx.fillStyle = '#000';
+            ctx.fillText(text, x + 5, y - 8);
+        });
+
+        requestAnimationFrame(runDetection);
+    }
+
+    initAI();
+</script>
+</body>
+</html>

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>webR 本地代码执行器 MVP</title>
+    <script type="module">
+        import { WebR } from 'https://webr.r-wasm.org/v0.3.3/webr.mjs';
+        
+        const webR = new WebR();
+        await webR.init();
+        console.log("webR 已就绪!");
+
+        let directoryHandle;
+
+        // 1. 选择本地文件夹
+        document.getElementById('selectDir').addEventListener('click', async () => {
+            directoryHandle = await window.showDirectoryPicker();
+            document.getElementById('status').innerText = `已连接目录: ${directoryHandle.name}`;
+        });
+
+        // 2. 模拟大模型生成并运行代码
+        document.getElementById('runCode').addEventListener('click', async () => {
+            if (!directoryHandle) return alert("请先选择文件夹");
+
+            // 模拟大模型生成的代码内容
+            const generatedCode = `
+                print("正在执行生成的 R 代码...")
+                data <- data.frame(
+                    ID = 1:5,
+                    Result = c("A", "B", "C", "D", "E"),
+                    Timestamp = Sys.time()
+                )
+                write.csv(data, "output_result.csv")
+                print("写入成功：output_result.csv")
+            `;
+
+            // 在 UI 上展示“生成的”代码
+            document.getElementById('codePreview').innerText = generatedCode;
+
+            // 在 webR 中执行
+            const shelly = await webR.runR(generatedCode);
+            
+            // 模拟将结果写回本地文件系统
+            await simulateFileWrite(directoryHandle, "code.R", generatedCode);
+            alert("执行完成！代码已存为 code.R，数据已处理。");
+        });
+
+        // 辅助函数：将字符串写入本地文件
+        async function simulateFileWrite(dirHandle, fileName, content) {
+            const fileHandle = await dirHandle.getFileHandle(fileName, { create: true });
+            const writable = await fileHandle.createWritable();
+            await writable.write(content);
+            await writable.close();
+        }
+    </script>
+</head>
+<body>
+    <h1>webR + 本地文件交互演示</h1>
+    <button id="selectDir">第一步：选择本地工作文件夹</button>
+    <p id="status">未选择目录</p>
+    <hr>
+    <button id="runCode">第二步：模拟生成并运行 R 代码</button>
+    
+    <h3>模拟生成的代码预览 (code.R):</h3>
+    <pre id="codePreview" style="background: #f4f4f4; padding: 10px; border: 1px solid #ccc;"></pre>
+</body>
+</html>

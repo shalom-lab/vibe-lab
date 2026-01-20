@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web API 黑科技全能实验室</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background-color: #0f172a; color: #f1f5f9; }
+        .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); transition: all 0.3s ease; }
+        .glass-card:hover { border-color: #38bdf8; transform: translateY(-2px); }
+        .console-log { font-family: 'Fira Code', monospace; font-size: 0.85rem; scrollbar-width: thin; }
+        .btn-primary { background: linear-gradient(135deg, #38bdf8 0%, #1d4ed8 100%); transition: opacity 0.2s; }
+        .btn-primary:hover { opacity: 0.9; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+        .error-glow { box-shadow: 0 0 15px rgba(248, 113, 113, 0.3); border-color: #f87171 !important; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="max-w-6xl mx-auto">
+        <header class="mb-10 text-center">
+            <h1 class="text-4xl md:text-5xl font-extrabold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400">
+                Web API 极客实验室
+            </h1>
+            <p class="text-slate-400 text-lg">探索浏览器作为“网页操作系统”的隐藏能力</p>
+            
+            <!-- 沙盒环境警告 -->
+            <div id="sandbox-warning" class="hidden mt-6 p-4 bg-amber-900/30 border border-amber-500/50 rounded-xl text-amber-200 text-sm max-w-2xl mx-auto">
+                <p>⚠️ <strong>检测到沙盒限制：</strong> 当前预览窗口处于跨域 Iframe 中。出于安全考虑，浏览器已禁用文件系统、吸色器等敏感 API。<strong>请将代码复制到本地 .html 文件并使用 Live Server 运行以获得完整体验。</strong></p>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            
+            <!-- 1. File System Access API -->
+            <div id="card-fs" class="glass-card p-6 rounded-2xl">
+                <div class="flex items-center mb-4 text-blue-400">
+                    <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
+                    <h2 class="text-xl font-bold italic">File System</h2>
+                </div>
+                <p class="text-sm text-slate-400 mb-4">不再是上传/下载，而是直接在你的硬盘里<strong>实时保存</strong>文件更改。</p>
+                <div class="flex flex-col gap-2">
+                    <button onclick="handleFileSystem()" class="btn-primary py-2 rounded-lg font-semibold">尝试打开本地文件</button>
+                    <span id="fs-status" class="text-xs text-slate-500">等待选取...</span>
+                </div>
+            </div>
+
+            <!-- 2. EyeDropper API -->
+            <div id="card-ed" class="glass-card p-6 rounded-2xl">
+                <div class="flex items-center mb-4 text-emerald-400">
+                    <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path></svg>
+                    <h2 class="text-xl font-bold italic">EyeDropper</h2>
+                </div>
+                <p class="text-sm text-slate-400 mb-4">全系统吸色器。捕获浏览器窗口外的颜色（如桌面或其它应用）。</p>
+                <div class="flex items-center gap-4">
+                    <button onclick="pickColor()" class="btn-primary px-4 py-2 rounded-lg font-semibold flex-1">启动吸色</button>
+                    <div id="color-preview" class="w-10 h-10 rounded-full border-2 border-white/20 bg-slate-800"></div>
+                </div>
+            </div>
+
+            <!-- 3. Local Font Access API -->
+            <div id="card-fa" class="glass-card p-6 rounded-2xl">
+                <div class="flex items-center mb-4 text-purple-400">
+                    <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5l-1.048 2.5"></path></svg>
+                    <h2 class="text-xl font-bold italic">Font Access</h2>
+                </div>
+                <p class="text-sm text-slate-400 mb-4">扫描系统中安装的所有字体库。适合在线设计工具调用。</p>
+                <button onclick="listFonts()" class="btn-primary w-full py-2 rounded-lg font-semibold mb-2">获取系统字体</button>
+                <select id="font-select" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-xs text-slate-300">
+                    <option>未获取数据</option>
+                </select>
+            </div>
+
+            <!-- 4. Web Speech API -->
+            <div class="glass-card p-6 rounded-2xl">
+                <div class="flex items-center mb-4 text-pink-400">
+                    <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                    <h2 class="text-xl font-bold italic">Offline Speech</h2>
+                </div>
+                <p class="text-sm text-slate-400 mb-4">浏览器自带离线引擎。该 API 在 Iframe 中通常受支持。</p>
+                <div class="flex flex-col gap-2">
+                    <input type="text" id="speech-input" placeholder="输入文字..." class="bg-slate-900 border border-slate-700 rounded p-2 text-sm" value="实验室系统就绪。请将此页面下载到本地以体验完整硬件功能。">
+                    <button onclick="speakText()" class="bg-pink-600 hover:bg-pink-700 py-2 rounded-lg font-semibold text-sm">合成并播放语音</button>
+                </div>
+            </div>
+
+            <!-- 5. GPU & Performance -->
+            <div class="glass-card p-6 rounded-2xl">
+                <div class="flex items-center mb-4 text-yellow-400">
+                    <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg>
+                    <h2 class="text-xl font-bold italic">GPU Context</h2>
+                </div>
+                <p class="text-sm text-slate-400 mb-4">通过 WebGL/WebGPU 指纹获取物理显卡信息。通常不受 Iframe 限制。</p>
+                <div id="gpu-info" class="text-[10px] text-slate-500 bg-black/30 p-2 rounded h-24 overflow-auto font-mono">
+                    等待扫描...
+                </div>
+                <button onclick="getGPUInfo()" class="mt-2 text-xs text-blue-400 hover:underline">立即探测硬件</button>
+            </div>
+
+            <!-- 6. Network & Environment -->
+            <div class="glass-card p-6 rounded-2xl">
+                <div class="flex items-center mb-4 text-orange-400">
+                    <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    <h2 class="text-xl font-bold italic">Environment</h2>
+                </div>
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between">
+                        <span>CPU 核心:</span>
+                        <span id="cpu-cores" class="text-orange-300 font-mono">-</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>网络状态:</span>
+                        <span id="net-speed" class="text-orange-300 font-mono">-</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>当前内存:</span>
+                        <span id="mem-info" class="text-orange-300 font-mono">-</span>
+                    </div>
+                </div>
+                <button onclick="getDeviceContext()" class="mt-4 w-full border border-orange-400/30 text-orange-400 py-1 rounded-lg text-xs">手动刷新</button>
+            </div>
+        </div>
+
+        <!-- 全局日志输出区域 -->
+        <div class="mt-10">
+            <h3 class="text-lg font-bold mb-4 flex items-center">
+                <span id="status-pulse" class="status-dot bg-green-500 animate-pulse"></span> 系统控制台 (Terminal)
+            </h3>
+            <div id="console" class="console-log bg-black rounded-xl p-4 h-64 overflow-y-auto border border-slate-800 text-green-500/80 shadow-2xl">
+                <div>[SYSTEM] 极客实验室内核 v2.0 初始化完成...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const isIframe = window.self !== window.top;
+        
+        function log(msg, type = 'INFO') {
+            const consoleEl = document.getElementById('console');
+            const time = new Date().toLocaleTimeString();
+            let colorClass = 'text-green-500/80';
+            if (type === 'ERROR') colorClass = 'text-red-400';
+            if (type === 'SUCCESS') colorClass = 'text-emerald-400';
+            if (type === 'WARN') colorClass = 'text-amber-400';
+            
+            consoleEl.innerHTML += `<div class="${colorClass}">[${time}] [${type}] ${msg}</div>`;
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+        }
+
+        // 1. File System Access
+        async function handleFileSystem() {
+            try {
+                if (!window.showOpenFilePicker) throw new Error('您的浏览器暂不支持 File System Access API');
+                
+                const [handle] = await window.showOpenFilePicker();
+                const file = await handle.getFile();
+                log(`成功连接到本地文件: ${file.name}`, 'SUCCESS');
+                document.getElementById('fs-status').innerText = `已挂载: ${file.name}`;
+            } catch (err) {
+                handleSecurityError(err, 'card-fs', '文件系统访问失败');
+            }
+        }
+
+        // 2. EyeDropper
+        async function pickColor() {
+            try {
+                if (!window.EyeDropper) throw new Error('浏览器不支持 EyeDropper');
+                const dropper = new EyeDropper();
+                log('激活系统级吸色器...');
+                const result = await dropper.open();
+                document.getElementById('color-preview').style.backgroundColor = result.sRGBHex;
+                log(`颜色采集成功: ${result.sRGBHex}`, 'SUCCESS');
+            } catch (err) {
+                handleSecurityError(err, 'card-ed', '吸色器调用失败');
+            }
+        }
+
+        // 3. Local Font Access
+        async function listFonts() {
+            try {
+                if (!window.queryLocalFonts) throw new Error('不支持 queryLocalFonts API');
+                const fonts = await window.queryLocalFonts();
+                const select = document.getElementById('font-select');
+                select.innerHTML = fonts.slice(0, 50).map(f => `<option>${f.fullName}</option>`).join('');
+                log(`成功读取到 ${fonts.length} 种系统本地字体`, 'SUCCESS');
+            } catch (err) {
+                handleSecurityError(err, 'card-fa', '字体访问受限');
+            }
+        }
+
+        // 4. Speech
+        function speakText() {
+            const text = document.getElementById('speech-input').value;
+            if (!text) return;
+            const ut = new SpeechSynthesisUtterance(text);
+            window.speechSynthesis.speak(ut);
+            log(`正在执行离线语音合成任务...`);
+        }
+
+        // 5. GPU
+        async function getGPUInfo() {
+            try {
+                const canvas = document.createElement('canvas');
+                const gl = canvas.getContext('webgl');
+                const debug = gl.getExtension('WEBGL_debug_renderer_info');
+                const vendor = gl.getParameter(debug.UNMASKED_VENDOR_WEBGL);
+                const renderer = gl.getParameter(debug.UNMASKED_RENDERER_WEBGL);
+                
+                document.getElementById('gpu-info').innerHTML = `VENDOR: ${vendor}<br>RENDERER: ${renderer}<br>WEBGL_VER: 1.0`;
+                log(`显卡指纹确认: ${renderer}`, 'SUCCESS');
+            } catch (err) {
+                log('无法获取 GPU 详细信息', 'ERROR');
+            }
+        }
+
+        // 6. Device Context
+        async function getDeviceContext() {
+            document.getElementById('cpu-cores').innerText = `${navigator.hardwareConcurrency || 1} 线程`;
+            
+            if (navigator.connection) {
+                const n = navigator.connection;
+                document.getElementById('net-speed').innerText = `${n.downlink}Mb/s (${n.effectiveType})`;
+            }
+
+            if (performance.memory) {
+                const mem = Math.round(performance.memory.usedJSHeapSize / 1048576);
+                document.getElementById('mem-info').innerText = `${mem} MB (Heap)`;
+            } else {
+                document.getElementById('mem-info').innerText = '内核锁定';
+            }
+            log('实时环境监测数据已刷新');
+        }
+
+        // 统一安全错误处理
+        function handleSecurityError(err, cardId, title) {
+            const card = document.getElementById(cardId);
+            card.classList.add('error-glow');
+            
+            if (err.name === 'SecurityError' || err.message.includes('sub frames') || err.message.includes('cross-origin')) {
+                log(`${title}: 检测到 Iframe 沙盒跨域限制。请在本地环境下运行。`, 'ERROR');
+                document.getElementById('sandbox-warning').classList.remove('hidden');
+                document.getElementById('status-pulse').classList.replace('bg-green-500', 'bg-red-500');
+            } else if (err.name === 'AbortError') {
+                log(`${title}: 操作被用户取消`);
+            } else {
+                log(`${title}: ${err.message}`, 'WARN');
+            }
+        }
+
+        window.onload = () => {
+            if (isIframe) {
+                log('警告：检测到当前运行在 Iframe 中，部分系统 API 将受限。', 'WARN');
+                document.getElementById('sandbox-warning').classList.remove('hidden');
+            }
+            getDeviceContext();
+            getGPUInfo();
+        };
+    </script>
+</body>
+</html>

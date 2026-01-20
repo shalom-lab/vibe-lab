@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的第一个PWA</title>
+    <link rel="manifest" href="manifest.json">
+    <style>
+        body { font-family: sans-serif; text-align: center; padding-top: 50px; }
+        .icon { font-size: 50px; }
+    </style>
+</head>
+<body>
+    <div class="icon">🚀</div>
+    <h1>最简 PWA 示例</h1>
+    <p>如果看到“安装”图标，说明配置成功！</p>
+
+    <script>
+        // 核心逻辑：注册 Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('SW 注册成功！', reg))
+                    .catch(err => console.log('SW 注册失败：', err));
+            });
+        }
+    </script>
+</body>
+</html>
