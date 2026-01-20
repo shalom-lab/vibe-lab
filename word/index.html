@@ -3,43 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI 视觉助手</title>
+    <title>AI 视觉百科 - 听读收藏版</title>
     
     <script src="https://unpkg.com/vconsole@latest/dist/vconsole.min.js"></script>
     <script>var vConsole = new window.VConsole();</script>
-
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
 
     <style>
-        :root { --blue: #2563eb; }
+        :root { --blue: #2563eb; --green: #10b981; }
         body { margin: 0; background: #000; color: #fff; font-family: sans-serif; overflow: hidden; }
+        #app-wrap { position: relative; width: 100vw; height: 100vh; }
+        video { position: absolute; width: 100%; height: 100%; object-fit: cover; }
+        canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; }
         
-        #app-wrap { position: relative; width: 100vw; height: 100vh; display: flex; flex-direction: column; }
-        video { position: absolute; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
-        canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; }
-
-        #overlay { position: absolute; z-index: 3; bottom: 50px; width: 100%; text-align: center; }
-        #status-box { 
-            background: rgba(0,0,0,0.7); display: inline-block; padding: 10px 20px; 
-            border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); margin-bottom: 20px;
-        }
-        #btn-action { 
-            background: var(--blue); color: white; border: none; padding: 18px 40px; 
-            border-radius: 50px; font-size: 18px; font-weight: bold; display: none;
-            box-shadow: 0 5px 20px rgba(37, 99, 235, 0.4);
-        }
+        #ui { position: absolute; bottom: 30px; width: 100%; z-index: 10; text-align: center; }
+        #status { background: rgba(0,0,0,0.7); padding: 8px 15px; border-radius: 20px; font-size: 13px; margin-bottom: 10px; display: inline-block; }
+        #btn-start { background: var(--blue); color: white; border: none; padding: 15px 35px; border-radius: 50px; font-size: 18px; }
+        
+        /* 收藏夹浮窗 */
+        #vocab-count { position: absolute; top: 20px; right: 20px; background: var(--green); padding: 5px 12px; border-radius: 15px; font-size: 12px; z-index: 10; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <div id="app-wrap">
+    <div id="vocab-count" onclick="showVocab()">已收藏: 0</div>
     <video id="webcam" autoplay muted playsinline></video>
     <canvas id="canvas"></canvas>
-
-    <div id="overlay">
-        <div id="status-box">正在初始化 AI...</div><br>
-        <button id="btn-action">立即开启识别</button>
+    <div id="ui">
+        <div id="status">AI 脑细胞加载中...</div><br>
+        <button id="btn-start">开启 AI 学习之旅</button>
     </div>
 </div>
 
@@ -47,94 +41,99 @@
     const video = document.getElementById('webcam');
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
-    const btn = document.getElementById('btn-action');
-    const status = document.getElementById('status-box');
-
-    const dict = {
-        'person': '人', 'cell phone': '手机', 'cup': '杯子', 'bottle': '瓶子',
-        'laptop': '电脑', 'mouse': '鼠标', 'keyboard': '键盘', 'book': '书',
-        'chair': '椅子', 'couch': '沙发', 'potted plant': '盆栽', 'tv': '电视',
-        'backpack': '背包', 'handbag': '包', 'umbrella': '雨伞', 'clock': '时钟',
-        'apple': '苹果', 'banana': '香蕉', 'scissors': '剪刀', 'toothbrush': '牙刷'
-    };
+    const status = document.getElementById('status');
+    const btn = document.getElementById('btn-start');
+    const countDisplay = document.getElementById('vocab-count');
 
     let model = null;
-    const MODEL_STORE_PATH = 'indexeddb://coco-ssd-model';
+    let lastSpoken = ""; // 防止重复朗读
+    let currentPredictions = [];
 
-    async function initAI() {
-        console.time('LoadModel');
-        status.innerText = "正在检测本地数据库...";
+    const dict = { 'person': '人', 'cell phone': '手机', 'cup': '杯子', 'bottle': '瓶子', 'laptop': '电脑', 'chair': '椅子', 'book': '书', 'dog': '狗', 'cat': '猫' };
 
-        try {
-            // 尝试从本地 IndexedDB 加载
-            model = await cocoSsd.load({ base: 'lite_mobilenet_v2' });
-            
-            // 这里的逻辑：TFJS 的模型一旦下载，浏览器会自动处理 HTTP Cache
-            // 如果你想真正手动存入 IndexedDB，可以使用 model.model.save(MODEL_STORE_PATH)
-            
-            console.timeEnd('LoadModel');
-            status.innerText = "AI 准备就绪 (约20MB)";
-            btn.style.display = "inline-block";
-        } catch (e) {
-            console.error("加载失败:", e);
-            status.innerText = "加载失败，请检查网络";
-        }
+    // 初始化收藏数
+    updateCount();
+
+    async function init() {
+        model = await cocoSsd.load();
+        status.innerText = "准备就绪！识别到物体点击屏幕可收藏";
+        btn.style.display = "inline-block";
     }
 
     btn.onclick = async () => {
-        status.innerText = "请求摄像头权限...";
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: 'environment' },
-                audio: false
-            });
-            video.srcObject = stream;
-            btn.style.display = "none";
-            status.innerText = "实时识别中 (本地计算)";
-            
-            video.onloadedmetadata = () => {
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                runDetection();
-            };
-        } catch (err) {
-            console.error("权限错误:", err);
-            alert("请确保 HTTPS 环境并允许摄像头访问");
-        }
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        video.srcObject = stream;
+        btn.style.display = "none";
+        video.onloadedmetadata = () => {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            detect();
+        };
     };
 
-    async function runDetection() {
-        if (!model) return;
-
-        // 执行本地推理
-        const predictions = await model.detect(video);
-        
+    // 核心检测与渲染
+    async function detect() {
+        currentPredictions = await model.detect(video);
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        predictions.forEach(p => {
+        currentPredictions.forEach(p => {
             const [x, y, w, h] = p.bbox;
-            const label = p.class;
-            const chinese = dict[label] || '';
+            const word = p.class;
+            
+            // 自动朗读逻辑：如果新出现的物体置信度高，且跟刚才读的不一样，就读出来
+            if (p.score > 0.75 && word !== lastSpoken) {
+                speak(word);
+                lastSpoken = word;
+            }
 
-            // 绘制视觉效果
             ctx.strokeStyle = '#00ff00';
             ctx.lineWidth = 4;
             ctx.strokeRect(x, y, w, h);
-
             ctx.fillStyle = '#00ff00';
-            ctx.font = 'bold 28px sans-serif';
-            const text = `${label.toUpperCase()} ${chinese}`;
-            const textWidth = ctx.measureText(text).width;
-            
-            ctx.fillRect(x, y - 35, textWidth + 10, 35);
-            ctx.fillStyle = '#000';
-            ctx.fillText(text, x + 5, y - 8);
+            ctx.font = '25px bold Arial';
+            ctx.fillText(`${word} ${dict[word] || ''}`, x, y > 30 ? y - 10 : y + 30);
         });
-
-        requestAnimationFrame(runDetection);
+        requestAnimationFrame(detect);
     }
 
-    initAI();
+    // 朗读函数
+    function speak(text) {
+        const msg = new SpeechSynthesisUtterance(text);
+        msg.lang = 'en-US';
+        msg.rate = 0.9; // 语速稍微慢一点
+        window.speechSynthesis.speak(msg);
+    }
+
+    // 点击收藏逻辑
+    canvas.onclick = (e) => {
+        if (currentPredictions.length > 0) {
+            const topWord = currentPredictions[0].class; // 收藏当前画面里概率最高的东西
+            saveWord(topWord);
+        }
+    };
+
+    function saveWord(word) {
+        let words = JSON.parse(localStorage.getItem('my_vocab') || '[]');
+        if (!words.includes(word)) {
+            words.push(word);
+            localStorage.setItem('my_vocab', JSON.stringify(words));
+            updateCount();
+            status.innerText = `已收藏: ${word}`;
+            speak("Saved " + word); // 收藏时也读一下
+        }
+    }
+
+    function updateCount() {
+        const words = JSON.parse(localStorage.getItem('my_vocab') || '[]');
+        countDisplay.innerText = `已收藏: ${words.length}`;
+    }
+
+    function showVocab() {
+        const words = JSON.parse(localStorage.getItem('my_vocab') || '[]');
+        alert("你的生词本: \n" + words.join(', '));
+    }
+
+    init();
 </script>
 </body>
 </html>
