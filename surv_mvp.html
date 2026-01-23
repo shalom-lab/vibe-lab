@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spark Survey Engine MVP</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .question-hidden { display: none; }
+        .question-disabled { opacity: 0.5; pointer-events: none; background: #f3f4f6; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen p-8">
+
+    <div id="app" class="max-w-2xl mx-auto bg-white shadow-xl rounded-2xl p-8">
+        <h1 id="survey-title" class="text-3xl font-bold text-slate-800 mb-8 border-b pb-4"></h1>
+        
+        <div id="question-container" class="space-y-6"></div>
+
+        <div class="mt-8 pt-6 border-t">
+            <button onclick="exportData()" class="bg-indigo-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-indigo-700 transition">
+                导出录入数据 (Console)
+            </button>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * 1. 灵魂：你的 JSON 协议 (The Schema)
+         * 这里展示了复杂的 WHEN-CONDITION-DO 逻辑
+         */
+        const surveyConfig = {
+            title: "SSE 引擎逻辑验证 MVP",
+            questions: [
+                { q_name: "age", type: "number", label: "1. 您的年龄", placeholder: "请输入数字" },
+                { q_name: "gender", type: "radio", label: "2. 您的性别", options: ["男", "女"] },
+                { 
+                    q_name: "pregnancy_status", 
+                    type: "radio", 
+                    label: "3. 是否怀孕", 
+                    options: ["是", "否"],
+                    // 默认隐藏，由下方规则控制
+                    defaultHidden: true 
+                },
+                { 
+                    q_name: "health_score", 
+                    type: "text", 
+                    label: "4. 系统计算的健康建议", 
+                    readonly: true 
+                }
+            ],
+            // 核心：WHEN...CONDITION...DO 逻辑网
+            logic_rules: [
+                {
+                    when: "gender",
+                    condition: "{current} === '女' && {age} >= 18 && {age} <= 50",
+                    do: [
+                        { target: "pregnancy_status", action: "SHOW" }
+                    ],
+                    else_do: [
+                        { target: "pregnancy_status", action: "HIDE" },
+                        { target: "pregnancy_status", action: "CLEAR" }
+                    ]
+                },
+                {
+                    when: "age",
+                    // 演示复杂逻辑：可以写数学运算、三元表达式甚至调用内置 JS 函数
+                    condition: "parseInt({current}) > 0",
+                    do: [
+                        { 
+                            target: "health_score", 
+                            action: "SET_VALUE", 
+                            value_expr: "parseInt({age}) < 18 ? '未成年人请注意发育' : ({age} > 60 ? '建议定期体检' : '青壮年阶段')" 
+                        }
+                    ]
+                }
+            ]
+        };
+
+        /**
+         * 2. 算法：母体引擎核心 (The Engine)
+         */
+        let formData = {};
+        const registry = {}; // 逻辑监听 Map
+
+        // 核心解析函数：处理 {variable} 占位符并执行逻辑
+        function evaluateLogic(expr, context) {
+            try {
+                // 将 {age} 替换为 formData.age，{current} 替换为当前值
+                const script = expr.replace(/\{(\w+)\}/g, (_, key) => {
+                    const val = key === 'current' ? context.current : formData[key];
+                    return typeof val === 'string' ? `'${val}'` : (val ?? 'undefined');
+                });
+                return new Function(`return (${script})`)();
+            } catch (e) {
+                return false;
+            }
+        }
+
+        // 初始化：织网 (Mapping)
+        function initEngine() {
+            document.getElementById('survey-title').innerText = surveyConfig.title;
+            
+            // 编译规则到 Registry
+            surveyConfig.logic_rules.forEach(rule => {
+                if (!registry[rule.when]) registry[rule.when] = [];
+                registry[rule.when].push(rule);
+            });
+
+            // 初始渲染
+            renderQuestions();
+        }
+
+        // 渲染器 (Renderer)
+        function renderQuestions() {
+            const container = document.getElementById('question-container');
+            container.innerHTML = '';
+
+            surveyConfig.questions.forEach(q => {
+                const wrapper = document.createElement('div');
+                wrapper.id = `wrapper-${q.q_name}`;
+                wrapper.className = `sse-question p-4 rounded-xl border border-slate-200 transition-all ${q.defaultHidden ? 'question-hidden' : ''}`;
+                
+                let inputHtml = '';
+                if (q.type === 'number' || q.type === 'text') {
+                    inputHtml = `<input type="${q.type}" oninput="handleInput('${q.q_name}', this.value)" placeholder="${q.placeholder || ''}" class="w-full border-b-2 border-slate-200 focus:border-indigo-500 outline-none py-2 bg-transparent" ${q.readonly ? 'readonly' : ''} id="input-${q.q_name}">`;
+                } else if (q.type === 'radio') {
+                    inputHtml = q.options.map(opt => `
+                        <label class="inline-flex items-center mr-6 cursor-pointer">
+                            <input type="radio" name="${q.q_name}" value="${opt}" onchange="handleInput('${q.q_name}', this.value)" class="w-4 h-4 text-indigo-600">
+                            <span class="ml-2 text-slate-700">${opt}</span>
+                        </label>
+                    `).join('');
+                }
+
+                wrapper.innerHTML = `
+                    <label class="block text-sm font-bold text-slate-500 mb-2 uppercase tracking-wide">${q.label}</label>
+                    <div class="mt-1">${inputHtml}</div>
+                `;
+                container.appendChild(wrapper);
+            });
+        }
+
+        // 核心：原生触发 (Trigger)
+        function handleInput(qName, value) {
+            formData[qName] = value;
+            console.log(`Triggered: ${qName} = ${value}`);
+
+            // 查找所有以 qName 为触发器的规则
+            const rules = registry[qName];
+            if (rules) {
+                rules.forEach(rule => {
+                    const isTrue = evaluateLogic(rule.condition, { current: value });
+                    const targetActions = isTrue ? rule.do : rule.else_do;
+
+                    if (targetActions) {
+                        targetActions.forEach(act => executeAction(act));
+                    }
+                });
+            }
+        }
+
+        // 动作执行器 (Action Executor)
+        function executeAction(act) {
+            const el = document.getElementById(`wrapper-${act.target}`);
+            const input = document.getElementById(`input-${act.target}`);
+
+            switch (act.action) {
+                case 'SHOW': el.classList.remove('question-hidden'); break;
+                case 'HIDE': el.classList.add('question-hidden'); break;
+                case 'CLEAR': 
+                    formData[act.target] = undefined;
+                    if (input) input.value = '';
+                    // 处理 Radio 清空
+                    document.querySelectorAll(`input[name="${act.target}"]`).forEach(r => r.checked = false);
+                    break;
+                case 'SET_VALUE':
+                    const computedVal = evaluateLogic(act.value_expr, {});
+                    formData[act.target] = computedVal;
+                    if (input) input.value = computedVal;
+                    break;
+            }
+        }
+
+        function exportData() {
+            console.table(formData);
+            alert("数据已打印到控制台 (F12)");
+        }
+
+        initEngine();
+    </script>
+</body>
+</html>

@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bookmarklet 压缩工具</title>
+    <style>
+        :root {
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --secondary: #64748b;
+            --border: #e2e8f0;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --code-bg: #1e1e1e;
+            --radius: 12px;
+            --inner-radius: 8px;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #0f172a;
+                --card: #1e293b;
+                --border: #334155;
+                --text-main: #f1f5f9;
+                --text-muted: #94a3b8;
+                --code-bg: #000000;
+            }
+        }
+
+        * { box-sizing: border-box; transition: all 0.2s ease; }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', -apple-system, system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text-main);
+            padding: 20px;
+            line-height: 1.5;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: auto;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            gap: 16px;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 4px;
+        }
+
+        .header h1 {
+            font-size: 1.25rem;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stats {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            display: flex;
+            gap: 16px;
+        }
+
+        /* Main Layout */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 16px;
+            flex-grow: 1;
+            min-height: 0;
+        }
+
+        @media (max-width: 900px) {
+            .main-grid { grid-template-columns: 1fr; overflow-y: auto; }
+            body { height: auto; overflow: auto; }
+        }
+
+        .panel {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .panel-header {
+            padding: 8px 12px;
+            background: rgba(0,0,0,0.02);
+            border-bottom: 1px solid var(--border);
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+        }
+
+        .panel-footer {
+            padding: 8px 12px;
+            border-top: 1px solid var(--border);
+            background: rgba(0,0,0,0.01);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            min-height: 45px;
+        }
+
+        .name-input-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--bg);
+            padding: 2px 8px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+        }
+
+        .name-input-group input {
+            background: transparent;
+            border: none;
+            color: var(--text-main);
+            font-size: 0.8rem;
+            width: 80px;
+            outline: none;
+        }
+
+        textarea {
+            width: 100%;
+            flex-grow: 1;
+            border: none;
+            padding: 12px;
+            font-family: 'Fira Code', Consolas, monospace;
+            font-size: 13px;
+            resize: none;
+            background: transparent;
+            color: var(--text-main);
+            outline: none;
+            line-height: 1.6;
+        }
+
+        .output-area {
+            background: var(--code-bg);
+            color: #d4d4d4;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 6px;
+        }
+
+        button {
+            padding: 5px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--card);
+            color: var(--text-main);
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        button:hover:not(:disabled) {
+            background: var(--bg);
+            border-color: var(--secondary);
+        }
+
+        button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        button.primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+        }
+
+        button.primary:hover:not(:disabled) {
+            background: var(--primary-hover);
+        }
+
+        /* Bookmark Link */
+        .bookmark-preview {
+            padding: 4px 12px;
+            background: var(--primary);
+            color: white !important;
+            text-decoration: none;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: move;
+            display: inline-block;
+        }
+
+        /* Toast UI */
+        #toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #1e293b;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            opacity: 0;
+            z-index: 1000;
+        }
+
+        #toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        .tag {
+            font-size: 0.7rem;
+            padding: 1px 6px;
+            border-radius: 4px;
+            background: var(--border);
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>🔖 Bookmarklet 压缩工具</h1>
+        <div class="stats">
+            <div id="charCount">源码: 0</div>
+            <div id="minCount">压缩后: 0</div>
+        </div>
+    </div>
+
+    <div class="main-grid">
+        <!-- Editor (Left Panel) -->
+        <div class="panel">
+            <div class="panel-header">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span>JavaScript 源码</span>
+                    <div class="name-input-group">
+                        <span style="font-size: 0.75rem; color: var(--text-muted);">名称:</span>
+                        <input type="text" id="bmName" value="Go">
+                    </div>
+                </div>
+                <span class="tag">ES6+</span>
+            </div>
+            
+            <textarea id="inputCode" spellcheck="false" placeholder="在此输入或粘贴 JS 代码..."></textarea>
+            
+            <div class="panel-footer">
+                <div class="btn-group">
+                    <!-- 统一使用高级 File System Access API -->
+                    <button onclick="importFileFromLocal()">📂 导入</button>
+                    <button id="saveBtn" onclick="saveFileToLocal()">💾 保存</button>
+                    <button onclick="clearAll()">🧹 清空</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Result (Right Panel) -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>生成结果</span>
+                <div id="testArea" style="display:none;">
+                    <a id="dragLink" class="bookmark-preview" href="#" title="拖拽到书签栏" onclick="return false;">Go</a>
+                </div>
+            </div>
+            
+            <textarea id="outputCode" class="output-area" readonly placeholder="压缩后的链接将出现在这里..."></textarea>
+
+            <div class="panel-footer" style="justify-content: flex-end;">
+                <button class="primary" onclick="generate()">📋 压缩并复制</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="toast">已复制到剪贴板</div>
+
+<script>
+    const inputArea = document.getElementById('inputCode');
+    const outputArea = document.getElementById('outputCode');
+    const dragLink = document.getElementById('dragLink');
+    const testArea = document.getElementById('testArea');
+    const charCount = document.getElementById('charCount');
+    const minCount = document.getElementById('minCount');
+    const bmNameInput = document.getElementById('bmName');
+    const saveBtn = document.getElementById('saveBtn');
+
+    window.onload = () => {
+        const saved = localStorage.getItem('bm_code_cache');
+        const savedName = localStorage.getItem('bm_name_cache');
+        
+        if (saved) inputArea.value = saved;
+        else inputArea.value = `// 示例：修改网页背景\n(() => {\n  document.body.style.backgroundColor = 'papayawhip';\n  console.log('Bookmarklet Ready!');\n})();`;
+        
+        if (savedName) bmNameInput.value = savedName;
+        
+        updateStats();
+        updateButtonStates();
+    };
+
+    inputArea.addEventListener('input', () => {
+        updateStats();
+        updateButtonStates();
+        localStorage.setItem('bm_code_cache', inputArea.value);
+    });
+
+    bmNameInput.addEventListener('input', () => {
+        localStorage.setItem('bm_name_cache', bmNameInput.value);
+        if (testArea.style.display !== 'none') {
+            dragLink.innerText = bmNameInput.value || "Go";
+        }
+    });
+
+    function updateButtonStates() {
+        saveBtn.disabled = !inputArea.value.trim();
+    }
+
+    function updateStats() {
+        charCount.textContent = `源码: ${inputArea.value.length}`;
+    }
+
+    function showToast(msg) {
+        const toast = document.getElementById('toast');
+        toast.textContent = msg;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2000);
+    }
+
+    // 高级用法：使用 showOpenFilePicker 导入文件
+    async function importFileFromLocal() {
+        if ('showOpenFilePicker' in window) {
+            try {
+                const [handle] = await window.showOpenFilePicker({
+                    types: [{
+                        description: 'JavaScript Files',
+                        accept: { 'text/javascript': ['.js'] },
+                    }],
+                    multiple: false
+                });
+                const file = await handle.getFile();
+                const content = await file.text();
+                inputArea.value = content;
+                updateStats();
+                updateButtonStates();
+                showToast('导入成功');
+            } catch (err) {
+                if (err.name !== 'AbortError') showToast('导入失败');
+            }
+        } else {
+            // 降级方案：由于要求统一高级用法，这里保留最简兼容逻辑
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.js';
+            input.onchange = e => {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                reader.onload = ev => {
+                    inputArea.value = ev.target.result;
+                    updateStats();
+                    updateButtonStates();
+                    showToast('导入成功');
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        }
+    }
+
+    // 高级用法：使用 showSaveFilePicker 保存文件
+    async function saveFileToLocal() {
+        const code = inputArea.value.trim();
+        if (!code) return;
+
+        if ('showSaveFilePicker' in window) {
+            try {
+                const handle = await window.showSaveFilePicker({
+                    suggestedName: 'script.js',
+                    types: [{ description: 'JS Files', accept: { 'text/javascript': ['.js'] } }],
+                });
+                const writable = await handle.createWritable();
+                await writable.write(code);
+                await writable.close();
+                showToast('已保存');
+            } catch (err) {
+                if (err.name !== 'AbortError') showToast('保存失败');
+            }
+        } else {
+            const blob = new Blob([code], { type: 'text/javascript' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'script.js';
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('已开始下载');
+        }
+    }
+
+    function minify(code) {
+        return code
+            .replace(/\/\/.*$/gm, '')           
+            .replace(/\/\*[\s\S]*?\*\//g, '')   
+            .replace(/\n\s+/g, '\n')            
+            .replace(/\s+\n/g, '\n')            
+            .replace(/\n+/g, ' ')               
+            .replace(/\s{2,}/g, ' ')            
+            .trim();
+    }
+
+    function generate() {
+        let code = inputArea.value.trim();
+        if (!code) return showToast('请输入代码');
+
+        let minified = minify(code);
+        const finalUrl = 'javascript:' + encodeURIComponent(minified);
+
+        outputArea.value = finalUrl;
+        minCount.textContent = `压缩后: ${finalUrl.length}`;
+        
+        testArea.style.display = 'block';
+        dragLink.href = finalUrl;
+        dragLink.innerText = bmNameInput.value || "Go";
+
+        copyToClipboard(finalUrl);
+    }
+
+    function copyToClipboard(text) {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        showToast('已复制到剪贴板');
+        document.body.removeChild(textArea);
+    }
+
+    function clearAll() {
+        if(confirm('确定清空吗？')) {
+            inputArea.value = '';
+            outputArea.value = '';
+            testArea.style.display = 'none';
+            updateStats();
+            updateButtonStates();
+            localStorage.removeItem('bm_code_cache');
+        }
+    }
+</script>
+
+</body>
+</html>
