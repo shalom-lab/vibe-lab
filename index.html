@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vibe Lab - Web 实验集合</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            background-size: 200% 200%;
+            animation: gradientShift 15s ease infinite;
+            color: #f1f5f9;
+            min-height: 100vh;
+        }
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        .glass-card {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .glass-card:hover {
+            border-color: rgba(59, 130, 246, 0.5);
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(59, 130, 246, 0.2);
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #60a5fa 0%, #34d399 50%, #a78bfa 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-size: 200% 200%;
+            animation: gradientText 3s ease infinite;
+        }
+        @keyframes gradientText {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        .project-card {
+            position: relative;
+            overflow: hidden;
+        }
+        .project-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.5s;
+        }
+        .project-card:hover::before {
+            left: 100%;
+        }
+        .icon-wrapper {
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(139, 92, 246, 0.2));
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 lg:p-12">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <header class="text-center mb-16 mt-8">
+            <div class="inline-flex items-center gap-2 mb-4 px-4 py-2 rounded-full glass-card">
+                <div class="pulse-dot"></div>
+                <span class="text-sm text-slate-400">Live Projects</span>
+            </div>
+            <h1 class="text-5xl md:text-7xl font-extrabold mb-6 gradient-text">
+                Vibe Lab
+            </h1>
+            <p class="text-xl md:text-2xl text-slate-400 max-w-3xl mx-auto leading-relaxed">
+                探索现代 Web 技术的实验集合
+                <br>
+                <span class="text-slate-500 text-lg">从 API 实验到 AI 应用，一站式体验</span>
+            </p>
+        </header>
+
+        <!-- Projects Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+            <!-- Web API 实验室 -->
+            <a href="web-api.html" class="project-card glass-card rounded-2xl p-6 block group">
+                <div class="flex items-start gap-4 mb-4">
+                    <div class="icon-wrapper group-hover:scale-110 transition-transform">
+                        <svg class="w-7 h-7 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-xl font-bold text-white mb-1 group-hover:text-blue-400 transition-colors">
+                            Web API 极客实验室
+                        </h3>
+                        <p class="text-sm text-slate-400">探索浏览器隐藏能力</p>
+                    </div>
+                </div>
+                <p class="text-slate-300 text-sm leading-relaxed">
+                    文件系统、剪贴板、通知等现代 Web API 的完整演示
+                </p>
+            </a>
+
+            <!-- Web API File -->
+            <a href="web-api-file.html" class="project-card glass-card rounded-2xl p-6 block group">
+                <div class="flex items-start gap-4 mb-4">
+                    <div class="icon-wrapper group-hover:scale-110 transition-transform">
+                        <svg class="w-7 h-7 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-xl font-bold text-white mb-1 group-hover:text-emerald-400 transition-colors">
+                            Web API 文件操作
+                        </h3>
+                        <p class="text-sm text-slate-400">文件系统 API 演示</p>
+                    </div>
+                </div>
+                <p class="text-slate-300 text-sm leading-relaxed">
+                    使用 File System Access API 进行本地文件读写操作
+                </p>
+            </a>
+
+            <!-- Survey MVP -->
+            <a href="surv_mvp.html" class="project-card glass-card rounded-2xl p-6 block group">
+                <div class="flex items-start gap-4 mb-4">
+                    <div class="icon-wrapper group-hover:scale-110 transition-transform">
+                        <svg class="w-7 h-7 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-xl font-bold text-white mb-1 group-hover:text-purple-400 transition-colors">
+                            Spark Survey Engine
+                        </h3>
+                        <p class="text-sm text-slate-400">问卷调查 MVP</p>
+                    </div>
+                </div>
+                <p class="text-slate-300 text-sm leading-relaxed">
+                    现代化的问卷调查系统，支持多种题型和逻辑跳转
+                </p>
+            </a>
+
+            <!-- FlowMark -->
+            <a href="flowmark.html" class="project-card glass-card rounded-2xl p-6 block group">
+                <div class="flex items-start gap-4 mb-4">
+                    <div class="icon-wrapper group-hover:scale-110 transition-transform">
+                        <svg class="w-7 h-7 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-xl font-bold text-white mb-1 group-hover:text-pink-400 transition-colors">
+                            FlowMark Pro
+                        </h3>
+                        <p class="text-sm text-slate-400">现代书签管理器</p>
+                    </div>
+                </div>
+                <p class="text-slate-300 text-sm leading-relaxed">
+                    美观实用的书签管理工具，支持分类和搜索
+                </p>
+            </a>
+
+            <!-- WebR -->
+            <a href="webr-.html" class="project-card glass-card rounded-2xl p-6 block group">
+                <div class="flex items-start gap-4 mb-4">
+                    <div class="icon-wrapper group-hover:scale-110 transition-transform">
+                        <svg class="w-7 h-7 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-xl font-bold text-white mb-1 group-hover:text-cyan-400 transition-colors">
+                            WebR 代码执行器
+                        </h3>
+                        <p class="text-sm text-slate-400">R 语言在线运行</p>
+                    </div>
+                </div>
+                <p class="text-slate-300 text-sm leading-relaxed">
+                    在浏览器中运行 R 代码，支持数据处理和文件操作
+                </p>
+            </a>
+
+            <!-- AI 视觉百科 -->
+            <a href="word/index.html" class="project-card glass-card rounded-2xl p-6 block group">
+                <div class="flex items-start gap-4 mb-4">
+                    <div class="icon-wrapper group-hover:scale-110 transition-transform">
+                        <svg class="w-7 h-7 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-xl font-bold text-white mb-1 group-hover:text-yellow-400 transition-colors">
+                            AI 视觉百科
+                        </h3>
+                        <p class="text-sm text-slate-400">听读收藏版</p>
+                    </div>
+                </div>
+                <p class="text-slate-300 text-sm leading-relaxed">
+                    AI 驱动的视觉识别和知识百科应用
+                </p>
+            </a>
+
+            <!-- PWA -->
+            <a href="PWA/index.html" class="project-card glass-card rounded-2xl p-6 block group">
+                <div class="flex items-start gap-4 mb-4">
+                    <div class="icon-wrapper group-hover:scale-110 transition-transform">
+                        <svg class="w-7 h-7 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-xl font-bold text-white mb-1 group-hover:text-indigo-400 transition-colors">
+                            PWA 示例
+                        </h3>
+                        <p class="text-sm text-slate-400">渐进式 Web 应用</p>
+                    </div>
+                </div>
+                <p class="text-slate-300 text-sm leading-relaxed">
+                    学习 PWA 的基础实现，包括 Service Worker 和 Manifest
+                </p>
+            </a>
+
+            <!-- Bookmarklet -->
+            <a href="bookmarklet/index.html" class="project-card glass-card rounded-2xl p-6 block group">
+                <div class="flex items-start gap-4 mb-4">
+                    <div class="icon-wrapper group-hover:scale-110 transition-transform">
+                        <svg class="w-7 h-7 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-xl font-bold text-white mb-1 group-hover:text-orange-400 transition-colors">
+                            Bookmarklet 工具
+                        </h3>
+                        <p class="text-sm text-slate-400">书签脚本压缩工具</p>
+                    </div>
+                </div>
+                <p class="text-slate-300 text-sm leading-relaxed">
+                    将 JavaScript 代码压缩为可用的书签脚本
+                </p>
+            </a>
+        </div>
+
+        <!-- Footer -->
+        <footer class="text-center mt-16 mb-8">
+            <div class="glass-card rounded-2xl p-8 max-w-2xl mx-auto">
+                <p class="text-slate-400 mb-4">
+                    <span class="text-slate-300 font-semibold">Vibe Lab</span> - 一个探索现代 Web 技术的实验集合
+                </p>
+                <div class="flex items-center justify-center gap-6 text-sm text-slate-500">
+                    <a href="https://github.com" class="hover:text-blue-400 transition-colors flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                        </svg>
+                        GitHub
+                    </a>
+                    <span>•</span>
+                    <span>Deployed on GitHub Pages</span>
+                </div>
+            </div>
+        </footer>
+    </div>
+</body>
+</html>
+

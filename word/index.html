@@ -12,17 +12,137 @@
 
     <style>
         :root { --blue: #2563eb; --green: #10b981; }
-        body { margin: 0; background: #000; color: #fff; font-family: sans-serif; overflow: hidden; }
-        #app-wrap { position: relative; width: 100vw; height: 100vh; }
-        video { position: absolute; width: 100%; height: 100%; object-fit: cover; }
-        canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; }
+        body { 
+            margin: 0; 
+            background: #000; 
+            color: #fff; 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
+            overflow: hidden; 
+            /* 考虑移动端安全区域 */
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+        }
+        #app-wrap { 
+            position: relative; 
+            width: 100vw; 
+            height: 100vh; 
+            /* 考虑移动端安全区域 */
+            height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+        }
+        video { 
+            position: absolute; 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+        }
+        canvas { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            z-index: 2; 
+            pointer-events: auto; /* 确保可以点击 */
+        }
         
-        #ui { position: absolute; bottom: 30px; width: 100%; z-index: 10; text-align: center; }
-        #status { background: rgba(0,0,0,0.7); padding: 8px 15px; border-radius: 20px; font-size: 13px; margin-bottom: 10px; display: inline-block; }
-        #btn-start { background: var(--blue); color: white; border: none; padding: 15px 35px; border-radius: 50px; font-size: 18px; }
+        #ui { 
+            position: absolute; 
+            bottom: 20px; 
+            /* 移动端增加底部间距，考虑安全区域 */
+            bottom: max(20px, env(safe-area-inset-bottom) + 20px);
+            width: 100%; 
+            z-index: 100; /* 提高z-index确保在最上层 */
+            text-align: center; 
+            padding: 0 20px;
+            box-sizing: border-box;
+            pointer-events: none; /* 容器不阻挡点击，但子元素可以 */
+        }
+        #status { 
+            background: rgba(0,0,0,0.85); 
+            padding: 10px 18px; 
+            border-radius: 25px; 
+            font-size: 14px; 
+            margin-bottom: 15px; 
+            display: inline-block; 
+            pointer-events: auto; /* 状态文本可交互 */
+            max-width: 90%;
+            word-wrap: break-word;
+        }
+        #btn-start { 
+            background: var(--blue); 
+            color: white; 
+            border: none; 
+            padding: 16px 40px; 
+            border-radius: 50px; 
+            font-size: 18px; 
+            font-weight: 600;
+            cursor: pointer;
+            pointer-events: auto; /* 按钮可点击 */
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
+            transition: all 0.3s ease;
+            min-height: 56px; /* 移动端最小触摸目标 */
+            min-width: 200px;
+        }
+        #btn-start:active {
+            transform: scale(0.95);
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+        }
         
         /* 收藏夹浮窗 */
-        #vocab-count { position: absolute; top: 20px; right: 20px; background: var(--green); padding: 5px 12px; border-radius: 15px; font-size: 12px; z-index: 10; cursor: pointer; }
+        #vocab-count { 
+            position: absolute; 
+            top: max(20px, env(safe-area-inset-top) + 20px);
+            right: 20px; 
+            background: var(--green); 
+            padding: 8px 16px; 
+            border-radius: 20px; 
+            font-size: 13px; 
+            font-weight: 600;
+            z-index: 100; 
+            cursor: pointer; 
+            pointer-events: auto;
+            box-shadow: 0 2px 10px rgba(16, 185, 129, 0.3);
+            transition: transform 0.2s ease;
+        }
+        #vocab-count:active {
+            transform: scale(0.95);
+        }
+        
+        /* 移动端优化 */
+        @media (max-width: 768px) {
+            #ui {
+                bottom: max(30px, env(safe-area-inset-bottom) + 30px);
+                padding: 0 16px;
+            }
+            #status {
+                font-size: 13px;
+                padding: 12px 20px;
+                margin-bottom: 20px;
+            }
+            #btn-start {
+                font-size: 16px;
+                padding: 18px 36px;
+                min-width: 180px;
+                width: auto;
+            }
+            #vocab-count {
+                top: max(15px, env(safe-area-inset-top) + 15px);
+                right: 15px;
+                font-size: 12px;
+                padding: 10px 14px;
+            }
+        }
+        
+        /* 小屏幕进一步优化 */
+        @media (max-width: 480px) {
+            #ui {
+                bottom: max(25px, env(safe-area-inset-bottom) + 25px);
+            }
+            #btn-start {
+                font-size: 15px;
+                padding: 16px 32px;
+                min-width: 160px;
+            }
+        }
     </style>
 </head>
 <body>

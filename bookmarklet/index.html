@@ -272,7 +272,6 @@
             
             <div class="panel-footer">
                 <div class="btn-group">
-                    <!-- 统一使用高级 File System Access API -->
                     <button onclick="importFileFromLocal()">📂 导入</button>
                     <button id="saveBtn" onclick="saveFileToLocal()">💾 保存</button>
                     <button onclick="clearAll()">🧹 清空</button>
@@ -314,8 +313,42 @@
         const saved = localStorage.getItem('bm_code_cache');
         const savedName = localStorage.getItem('bm_name_cache');
         
-        if (saved) inputArea.value = saved;
-        else inputArea.value = `// 示例：修改网页背景\n(() => {\n  document.body.style.backgroundColor = 'papayawhip';\n  console.log('Bookmarklet Ready!');\n})();`;
+        if (saved) {
+            inputArea.value = saved;
+        } else {
+            inputArea.value = `(function() {
+  const ruleList = [
+    {
+      urlpattern: 'github.io/Spark',
+      storage: [
+        { "spark_repo": "shalom-lab/Spark" },
+        { "spark_token": "YOUR_TOKEN_HERE" } 
+      ]
+    },
+    {
+      urlpattern: 'github.com',
+      storage: [
+        { "theme": { "color": "dark" } }
+      ]
+    }
+  ];
+
+  const currentUrl = window.location.href;
+
+  ruleList.forEach(rule => {
+    if (currentUrl.includes(rule.urlpattern)) {
+      rule.storage.forEach(item => {
+        for (const key in item) {
+          const val = item[key];
+          const saveVal = (typeof val === 'object') ? JSON.stringify(val) : String(val);
+          localStorage.setItem(key, saveVal);
+        }
+      });
+      console.log('✅ Bookmarklet: 已为 ' + rule.urlpattern + ' 更新本地存储');
+    }
+  });
+})();`;
+        }
         
         if (savedName) bmNameInput.value = savedName;
         
@@ -351,74 +384,37 @@
         setTimeout(() => toast.classList.remove('show'), 2000);
     }
 
-    // 高级用法：使用 showOpenFilePicker 导入文件
-    async function importFileFromLocal() {
-        if ('showOpenFilePicker' in window) {
-            try {
-                const [handle] = await window.showOpenFilePicker({
-                    types: [{
-                        description: 'JavaScript Files',
-                        accept: { 'text/javascript': ['.js'] },
-                    }],
-                    multiple: false
-                });
-                const file = await handle.getFile();
-                const content = await file.text();
-                inputArea.value = content;
+    function importFileFromLocal() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.js';
+        input.onchange = e => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = ev => {
+                inputArea.value = ev.target.result;
                 updateStats();
                 updateButtonStates();
                 showToast('导入成功');
-            } catch (err) {
-                if (err.name !== 'AbortError') showToast('导入失败');
-            }
-        } else {
-            // 降级方案：由于要求统一高级用法，这里保留最简兼容逻辑
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = '.js';
-            input.onchange = e => {
-                const file = e.target.files[0];
-                const reader = new FileReader();
-                reader.onload = ev => {
-                    inputArea.value = ev.target.result;
-                    updateStats();
-                    updateButtonStates();
-                    showToast('导入成功');
-                };
-                reader.readAsText(file);
             };
-            input.click();
-        }
+            reader.readAsText(file);
+        };
+        input.click();
     }
 
-    // 高级用法：使用 showSaveFilePicker 保存文件
-    async function saveFileToLocal() {
+    function saveFileToLocal() {
         const code = inputArea.value.trim();
         if (!code) return;
-
-        if ('showSaveFilePicker' in window) {
-            try {
-                const handle = await window.showSaveFilePicker({
-                    suggestedName: 'script.js',
-                    types: [{ description: 'JS Files', accept: { 'text/javascript': ['.js'] } }],
-                });
-                const writable = await handle.createWritable();
-                await writable.write(code);
-                await writable.close();
-                showToast('已保存');
-            } catch (err) {
-                if (err.name !== 'AbortError') showToast('保存失败');
-            }
-        } else {
-            const blob = new Blob([code], { type: 'text/javascript' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'script.js';
-            a.click();
-            URL.revokeObjectURL(url);
-            showToast('已开始下载');
-        }
+        const blob = new Blob([code], { type: 'text/javascript' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        // 修改默认保存文件名为 bookmarklet.js
+        a.download = 'bookmarklet.js';
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('已保存');
     }
 
     function minify(code) {
