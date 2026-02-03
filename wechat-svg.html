@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>微信原生动画实验室 - 2026 栅格全集版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        
+        /* 模态框动画 */
+        #codeModal { transition: opacity 0.2s ease; }
+        #codeModal.hidden { display: none; opacity: 0; pointer-events: none; }
+
+        /* 滚动条美化 */
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #0f172a; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+
+        /* 卡片悬停感 */
+        .card-hover { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .card-hover:hover { transform: translateY(-4px); box-shadow: 0 15px 30px -10px rgba(0, 0, 0, 0.15); }
+        
+        /* 分页按钮样式 */
+        .page-btn.active { background-color: #4f46e5; color: white; border-color: #4f46e5; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 font-sans p-6 md:p-12">
+
+    <div class="max-w-[1200px] mx-auto">
+        <!-- 头部信息 -->
+        <header class="mb-16 text-center">
+            <h1 class="text-4xl font-black mb-3 tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-slate-800 to-indigo-600 uppercase">
+                微信原生动画实验室
+            </h1>
+            <div class="flex items-center justify-center gap-2">
+                <span class="h-px w-8 bg-indigo-200"></span>
+                <p class="text-slate-400 text-sm font-medium tracking-wide">2026 安全白名单 · 纯有色 SVG 60 个栅格对齐案例</p>
+                <span class="h-px w-8 bg-indigo-200"></span>
+            </div>
+        </header>
+
+        <!-- 外部布局：改用 Grid 确保大屏下行列对齐 -->
+        <div id="cards-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 min-h-[500px]">
+            <!-- 内容由 JS 动态渲染 -->
+        </div>
+
+        <!-- 分页控制栏 -->
+        <div class="mt-16 flex justify-center items-center gap-2 flex-wrap" id="pagination"></div>
+
+        <footer class="mt-20 py-10 border-t border-slate-200 text-[10px] text-slate-300 font-mono tracking-[0.3em] uppercase italic text-center">
+            Engine verified for WeChat 2026 v8.0 (Grid Alignment Fix)
+        </footer>
+    </div>
+
+    <!-- 弹窗模态框 -->
+    <div id="codeModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden text-left">
+        <div class="bg-white w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
+            <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <div>
+                    <h2 id="modalTitle" class="text-xl font-bold text-slate-800 tracking-tight">代码预览</h2>
+                    <p class="text-[9px] text-indigo-400 font-mono mt-0.5 uppercase tracking-tighter font-bold">Invoke API Script</p>
+                </div>
+                <button onclick="closeModal()" class="w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-sm text-slate-400 hover:text-rose-500 border border-slate-100 transition-all active:scale-90">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            <div class="p-6 overflow-auto custom-scrollbar bg-slate-950 flex-grow">
+                <pre class="text-indigo-300 font-mono text-[11px] leading-relaxed" id="modalCode"></pre>
+            </div>
+            <div class="p-5 bg-white border-t border-slate-100 flex justify-end">
+                <button id="modalCopyBtn" class="bg-slate-900 hover:bg-indigo-600 text-white px-8 py-3 rounded-xl text-xs font-bold transition-all active:scale-95 shadow-lg">
+                    复制完整脚本
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 卡片模板 -->
+    <template id="card-template">
+        <div class="card-item card-hover bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-full">
+            <div class="grid grid-rows-[140px_auto] h-full">
+                <!-- 预览区 -->
+                <div class="preview-area bg-slate-950 flex items-center justify-center p-4 relative overflow-hidden aspect-video">
+                    <div class="absolute inset-0 bg-white opacity-[0.02] pointer-events-none"></div>
+                </div>
+                <!-- 单行操作区 -->
+                <div class="px-5 py-4 flex items-center justify-between bg-white border-t border-slate-50">
+                    <div class="flex-1 min-w-0 pr-2">
+                        <h3 class="font-bold text-slate-700 text-xs truncate card-title"></h3>
+                    </div>
+                    <div class="flex items-center gap-1.5 flex-shrink-0">
+                        <button class="view-btn w-9 h-9 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all border border-transparent hover:border-indigo-100">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                        </button>
+                        <button class="copy-btn w-9 h-9 flex items-center justify-center bg-slate-50 text-slate-500 hover:bg-indigo-600 hover:text-white rounded-xl transition-all active:scale-90 border border-slate-100">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <script>
+        function wrapCode(svgStr) {
+            const cleanSvg = svgStr.replace(/\s+/g, ' ').trim();
+            return `window.__MP_Editor_JSAPI__.invoke({
+    apiName: 'mp_editor_set_content',
+    apiParam: {
+        content: \`
+            <section style="margin: 20px auto; text-align: center; font-size: 0; line-height: 0;">
+                ${cleanSvg}
+            </section>
+        \`
+    }
+});`;
+        }
+
+        const cases = [
+            // 第一页 (1-12)
+            { title: "路径折叠轮播", svg: `<svg width="280" height="200" viewBox="0 0 280 200" style="background:#111;border-radius:12px;"><path fill="#ec4899"><animate attributeName="d" dur="6s" repeatCount="indefinite" values="M10,10 L270,10 L270,190 L10,190 Z; M140,100 L140,100 L140,100 L140,100 Z; M140,100 L140,100 L140,100 L140,100 Z; M10,10 L270,10 L270,190 L10,190 Z" /></path><text x="50%" y="115" fill="#818cf8" font-size="28" text-anchor="middle" font-weight="bold">Page A<animate attributeName="fill" dur="6s" repeatCount="indefinite" values="#818cf8;#111;#111;#818cf8"/></text><path fill="#6366f1"><animate attributeName="d" dur="6s" repeatCount="indefinite" values="M140,100 L140,100 L140,100 L140,100 Z; M10,10 L270,10 L270,190 L10,190 Z; M10,10 L270,10 L270,190 L10,190 Z; M140,100 L140,100 L140,100 L140,100 Z" /></path><text x="50%" y="115" fill="#111" font-size="28" text-anchor="middle" font-weight="bold">Page B<animate attributeName="fill" dur="6s" repeatCount="indefinite" values="#111;#818cf8;#818cf8;#111"/></text></svg>` },
+            { title: "横向字幕流动", svg: `<svg width="100%" height="60" viewBox="0 0 400 60" style="background:#111;"><text x="100%" y="38" fill="#818cf8" font-size="18" font-weight="bold">测试横向滚动消息...<animateTransform attributeName="transform" type="translate" from="0 0" to="-500 0" dur="8s" repeatCount="indefinite" /></text></svg>` },
+            { title: "正在载入点点", svg: `<svg width="100" height="40" viewBox="0 0 100 40"><circle cx="30" cy="20" r="3" fill="#818cf8"><animateTransform attributeName="transform" type="scale" values="1;1.8;1" dur="1s" repeatCount="indefinite" additive="sum"/><animate attributeName="fill" values="#818cf8;#1e293b" dur="1s" repeatCount="indefinite"/></circle><circle cx="50" cy="20" r="3" fill="#818cf8"><animateTransform attributeName="transform" type="scale" values="1;1.8;1" dur="1s" repeatCount="indefinite" begin="0.3s" additive="sum"/><animate attributeName="fill" values="#818cf8;#1e293b" dur="1s" repeatCount="indefinite" begin="0.3s"/></circle><circle cx="70" cy="20" r="3" fill="#818cf8"><animateTransform attributeName="transform" type="scale" values="1;1.8;1" dur="1s" repeatCount="indefinite" begin="0.6s" additive="sum"/><animate attributeName="fill" values="#818cf8;#1e293b" dur="1s" repeatCount="indefinite" begin="0.6s"/></circle></svg>` },
+            { title: "开关切换模拟", svg: `<svg width="100" height="60" viewBox="0 0 100 60"><rect x="20" y="20" width="60" height="30" rx="15" fill="#1e293b"><animate attributeName="fill" values="#1e293b;#10b981;#1e293b" dur="2s" repeatCount="indefinite"/></rect><circle cx="35" cy="35" r="10" fill="#facc15"><animate attributeName="cx" values="35;65;35" dur="2s" repeatCount="indefinite"/></circle></svg>` },
+            { title: "声波扩散涟漪", svg: `<svg width="100" height="100" viewBox="0 0 100 100"><circle cx="50" cy="50" r="5" stroke="#818cf8" fill="none" stroke-width="2"><animate attributeName="r" from="5" to="45" dur="2s" repeatCount="indefinite"/><animate attributeName="stroke-width" values="4;0" dur="2s" repeatCount="indefinite"/></circle></svg>` },
+            { title: "DNA双螺旋位移", svg: `<svg width="100" height="60" viewBox="0 0 100 60"><circle cx="20" cy="30" r="4" fill="#6366f1"><animateTransform attributeName="transform" type="translate" values="0,-15; 0,15; 0,-15" dur="2s" repeatCount="indefinite"/></circle><circle cx="40" cy="30" r="4" fill="#f43f5e"><animateTransform attributeName="transform" type="translate" values="0,15; 0,-15; 0,15" dur="2s" repeatCount="indefinite"/></circle></svg>` },
+            { title: "双向路径生长", svg: `<svg width="200" height="20" viewBox="0 0 200 20"><path fill="none" stroke="#f59e0b" stroke-width="3" d="M100,10 L100,10"><animate attributeName="d" values="M100,10 L100,10; M10,10 L190,10; M100,10 L100,10" dur="2s" repeatCount="indefinite" /></path></svg>` },
+            { title: "螺旋线旋转", svg: `<svg width="100" height="100" viewBox="0 0 100 100"><path d="M50,50 Q60,30 80,50 T50,80 T20,50 T50,20" fill="none" stroke="#818cf8" stroke-width="2"><animateTransform attributeName="transform" type="rotate" from="0 50 50" to="360 50 50" dur="8s" repeatCount="indefinite"/></path></svg>` },
+            { title: "荧光划线强调", svg: `<svg width="200" height="60" viewBox="0 0 200 60"><path d="M8,40 L8,40" stroke="#facc15" stroke-width="15"><animate attributeName="d" from="M8,40 L8,40" to="M8,40 L160,40" dur="1.2s" fill="freeze" repeatCount="indefinite"/></path><text x="10" y="35" fill="#818cf8" font-size="16" font-weight="bold">核心强调划线</text></svg>` },
+            { title: "引用框动感流光", svg: `<svg width="200" height="60" viewBox="0 0 200 60"><rect x="10" y="10" width="180" height="40" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="15,10"><animate attributeName="stroke-dashoffset" from="0" to="30" dur="1s" repeatCount="indefinite"/></rect></svg>` },
+            { title: "星级闪烁装饰", svg: `<svg width="100" height="60" viewBox="0 0 100 60"><polygon points="50,10 52,18 60,20 52,22 50,30" fill="#facc15"><animate attributeName="fill" values="#facc15;#1e293b;#facc15" dur="1s" repeatCount="indefinite" /><animateTransform attributeName="transform" type="scale" values="1;1.4;1" from="1" to="1" dur="1s" repeatCount="indefinite" additive="sum"/></polygon></svg>` },
+            { title: "垂直文字惊喜", svg: `<svg width="200" height="60" viewBox="0 0 200 60"><text x="50%" y="35" text-anchor="middle" fill="#818cf8" font-size="16">向上滑动呈现<animateTransform attributeName="transform" type="translate" from="0 60" to="0 0" dur="2s" repeatCount="indefinite"/></text></svg>` },
+
+            // 第二页 (13-24)
+            { title: "沙漏翻转模拟", svg: `<svg width="100" height="100" viewBox="0 0 100 100"><path d="M30,20 H70 L50,50 Z" fill="#facc15"><animate attributeName="d" values="M30,20 H70 L50,50 Z; M50,50 H50 L50,50 Z; M30,20 H70 L50,50 Z" dur="4s" repeatCount="indefinite"/></path><g><path d="M30,20 L70,20 L70,80 L30,80 Z" fill="none" stroke="#818cf8" stroke-width="2"/><animateTransform attributeName="transform" type="rotate" from="0 50 50" to="180 50 50" dur="4s" repeatCount="indefinite" keyTimes="0;0.8;1" values="0;0;180"/></g></svg>` },
+            { title: "液态圆点融合", svg: `<svg width="100" height="100" viewBox="0 0 100 100"><circle cx="40" cy="50" r="15" fill="#818cf8"><animate attributeName="cx" values="40;50;40" dur="2s" repeatCount="indefinite"/></circle><circle cx="60" cy="50" r="15" fill="#818cf8"><animate attributeName="cx" values="60;50;60" dur="2s" repeatCount="indefinite"/></circle></svg>` },
+            { title: "能量核心脉冲", svg: `<svg width="100" height="100" viewBox="0 0 100 100"><circle cx="50" cy="50" r="30" stroke="#818cf8" stroke-width="2" fill="none" stroke-dasharray="60,30"><animateTransform attributeName="transform" type="rotate" from="0 50 50" to="360 50 50" dur="3s" repeatCount="indefinite"/></circle><circle cx="50" cy="50" r="20" stroke="#f43f5e" stroke-width="2" fill="none" stroke-dasharray="40,20"><animateTransform attributeName="transform" type="rotate" from="360 50 50" to="0 50 50" dur="2s" repeatCount="indefinite"/></circle></svg>` },
+            { title: "日夜切换图标", svg: `<svg width="100" height="100" viewBox="0 0 100 100"><circle cx="50" cy="50" r="20" fill="#facc15"><animate attributeName="fill" values="#facc15;#818cf8;#facc15" dur="4s" repeatCount="indefinite"/></circle><path d="M50,15 V25 M75,50 H85 M50,75 V85 M25,50 H15" stroke="#facc15" stroke-width="3"><animateTransform attributeName="transform" type="rotate" from="0 50 50" to="360 50 50" dur="6s" repeatCount="indefinite"/></path></svg>` },
+            { title: "文字基线跳跃", svg: `<svg width="200" height="60" viewBox="0 0 200 60"><text x="20" y="40" fill="#facc15" font-size="20" font-weight="bold">VOICE<animateTransform attributeName="transform" type="translate" values="0,0; 0,-8; 0,0" dur="0.6s" repeatCount="indefinite"/></text><line x1="20" y1="45" x2="100" y2="45" stroke="#818cf8" stroke-width="2"><animate attributeName="x2" values="100;40;100" dur="0.6s" repeatCount="indefinite"/></line></svg>` },
+            { title: "3D方块旋转感", svg: `<svg width="100" height="100" viewBox="0 0 100 100"><path fill="#6366f1" d="M30,30 L70,30 L70,70 L30,70 Z"><animate attributeName="d" values="M30,30 L70,30 L70,70 L30,70 Z; M50,10 L90,30 L50,50 L10,30 Z; M30,30 L70,30 L70,70 L30,70 Z" dur="3s" repeatCount="indefinite"/></path></svg>` },
+            { title: "指纹激光识别", svg: `<svg width="100" height="100" viewBox="0 0 100 100"><path d="M30,30 Q50,10 70,30 T70,70 T30,70 T30,30" fill="none" stroke="#10b981" stroke-width="1" stroke-dasharray="5,5"/><rect x="25" y="30" width="50" height="2" fill="#10b981"><animateTransform attributeName="transform" type="translate" values="0,0; 0,40; 0,0" dur="2s" repeatCount="indefinite"/></rect></svg>` },
+            { title: "音量波形动态", svg: `<svg width="100" height="60" viewBox="0 0 100 60"><g fill="#f43f5e"><rect x="20" y="20" width="6" height="20"><animate attributeName="height" values="20;5;20" dur="0.4s" repeatCount="indefinite"/></rect><rect x="35" y="20" width="6" height="20"><animate attributeName="height" values="20;35;20" dur="0.6s" repeatCount="indefinite"/></rect><rect x="50" y="20" width="6" height="20"><animate attributeName="height" values="20;10;20" dur="0.5s" repeatCount="indefinite"/></rect></g></svg>` },
+            { title: "心动跳动效果", svg: `<svg width="100" height="100" viewBox="0 0 100 100"><path fill="#f43f5e" d="M50,80 Q90,40 50,20 Q10,40 50,80 Z"><animateTransform attributeName="transform" type="scale" values="1;1.2;1" dur="0.8s" repeatCount="indefinite" from="1 1" to="1 1" additive="sum"/></path></svg>` },
+            { title: "无限充电动效", svg: `<svg width="100" height="60" viewBox="0 0 100 60"><rect x="20" y="20" width="50" height="25" rx="3" stroke="#818cf8" fill="none" stroke-width="2"/><rect x="23" y="23" width="0" height="19" fill="#10b981"><animate attributeName="width" values="0;44;0" dur="3s" repeatCount="indefinite"/></rect><rect x="70" y="27" width="5" height="10" fill="#818cf8"/></svg>` },
+            { title: "环形声波脉冲", svg: `<svg width="100" height="100" viewBox="0 0 100 100"><circle cx="50" cy="50" r="20" stroke="#818cf8" fill="none" stroke-width="2"><animate attributeName="r" values="20;45;20" dur="1.5s" repeatCount="indefinite"/><animate attributeName="stroke-width" values="2;8;2" dur="1.5s" repeatCount="indefinite"/></circle></svg>` },
+            { title: "向右滑动指引", svg: `<svg width="200" height="40" viewBox="0 0 200 40"><path d="M20,20 L50,20 L45,15 M50,20 L45,25" stroke="#818cf8" stroke-width="3" fill="none"><animateTransform attributeName="transform" type="translate" from="0 0" to="130 0" dur="2s" repeatCount="indefinite"/></path></svg>` },
+
+            // 第三页 (25-36)
+            { title: "点赞手指动效", svg: `<svg width="100" height="60" viewBox="0 0 100 60"><path d="M50,45 L50,25 M40,35 L50,25 L60,35" stroke="#f43f5e" stroke-width="4" fill="none"><animateTransform attributeName="transform" type="translate" values="0,0;0,-12;0,0" dur="1s" repeatCount="indefinite"/></path></svg>` },
+            { title: "关注提示呼吸", svg: `<svg width="120" height="50" viewBox="0 0 120 50"><rect x="10" y="10" width="100" height="30" rx="15" fill="#f43f5e"><animateTransform attributeName="transform" type="scale" values="1;1.1;1" dur="1s" repeatCount="indefinite" from="1 1" to="1 1" additive="sum"/></rect><text x="60" y="30" text-anchor="middle" fill="#facc15" font-size="12" font-weight="bold">GO</text></svg>` },
+            { title: "双线交错生长", svg: `<svg width="200" height="20" viewBox="0 0 200 20"><path d="M10,8 L190,8" stroke="#818cf8" stroke-dasharray="100,100" stroke-width="2"><animate attributeName="stroke-dashoffset" values="200;0" dur="3s" repeatCount="indefinite"/></path><path d="M10,12 L190,12" stroke="#f43f5e" stroke-dasharray="100,100" stroke-width="2"><animate attributeName="stroke-dashoffset" values="-200;0" dur="3s" repeatCount="indefinite"/></path></svg>` },
+            { title: "多重方框缩放", svg: `<svg width="100" height="100" viewBox="0 0 100 100"><rect x="30" y="30" width="40" height="40" fill="#818cf8"><animateTransform attributeName="transform" type="scale" values="1;1.4;1" dur="2s" repeatCount="indefinite" from="1 1" to="1 1" additive="sum"/></rect><rect x="40" y="40" width="20" height="20" fill="#facc15"><animateTransform attributeName="transform" type="scale" values="1;0.6;1" dur="2s" repeatCount="indefinite" from="1 1" to="1 1" additive="sum"/></rect></svg>` },
+            { title: "文字闪烁强调", svg: `<svg width="200" height="40" viewBox="0 0 200 40"><text x="50%" y="28" text-anchor="middle" fill="#facc15" font-size="20" font-weight="black">FLASH<animate attributeName="fill" values="#facc15;#111;#facc15" dur="0.5s" repeatCount="indefinite"/></text></svg>` },
+            { title: "向心缩放五星", svg: `<svg width="100" height="100" viewBox="0 0 100 100"><path d="M50,20 L55,40 L75,40 L60,55 L65,75 L50,60 L35,75 L40,55 L25,40 L45,40 Z" fill="#facc15"><animateTransform attributeName="transform" type="scale" values="1.2;0.8;1.2" dur="2s" repeatCount="indefinite" from="1 1" to="1 1" additive="sum"/></path></svg>` },
+            { title: "章节标题滑过", svg: `<svg width="200" height="40" viewBox="0 0 200 40"><rect x="0" y="35" width="200" height="2" fill="#818cf8"><animate attributeName="width" values="0;200;0" dur="3s" repeatCount="indefinite"/></rect><text x="100" y="25" text-anchor="middle" fill="#818cf8" font-size="14" font-weight="bold">Chapter Title</text></svg>` },
+            { title: "螺旋上升气泡", svg: `<svg width="100" height="100" viewBox="0 0 100 100"><circle cx="50" cy="90" r="4" fill="#818cf8"><animateTransform attributeName="transform" type="translate" values="0,0; 20,-40; -20,-80" dur="4s" repeatCount="indefinite"/></circle></svg>` },
+            { title: "矩形环绕生长", svg: `<svg width="100" height="100" viewBox="0 0 100 100"><rect x="10" y="10" width="80" height="80" fill="none" stroke="#6366f1" stroke-width="4" stroke-dasharray="320"><animate attributeName="stroke-dashoffset" values="320;0;-320" dur="5s" repeatCount="indefinite"/></rect></svg>` },
+            { title: "流星斜划过空", svg: `<svg width="200" height="100" viewBox="0 0 200 100"><line x1="0" y1="0" x2="30" y2="30" stroke="#facc15" stroke-width="3"><animateTransform attributeName="transform" type="translate" from="-50 -50" to="250 250" dur="3s" repeatCount="indefinite"/></line></svg>` },
+            { title: "圆圈加载律动", svg: `<svg width="100" height="100" viewBox="0 0 100 100"><circle cx="50" cy="50" r="35" fill="none" stroke="#6366f1" stroke-width="4" stroke-dasharray="219"><animate attributeName="stroke-dashoffset" values="219;0;-219" dur="4s" repeatCount="indefinite"/></circle></svg>` },
+            { title: "结尾动态装饰", svg: `<svg viewBox="0 0 200 40"><circle cx="100" cy="20" r="5" fill="#818cf8"><animate attributeName="r" values="5;15;5" dur="2s" repeatCount="indefinite"/></circle><line x1="0" y1="20" x2="80" y2="20" stroke="#818cf8" stroke-width="1"/><line x1="120" y1="20" x2="200" y2="20" stroke="#818cf8" stroke-width="1"/></svg>` },
+
+            // 第四页 (37-48)
+            { title: "动态信号波动", svg: `<svg width="100" height="60" viewBox="0 0 100 60"><g fill="#818cf8"><rect x="20" y="40" width="6" height="5"><animate attributeName="height" values="5;15;5" dur="1s" repeatCount="indefinite"/></rect><rect x="30" y="40" width="6" height="5"><animate attributeName="height" values="5;25;5" dur="1s" repeatCount="indefinite" begin="0.2s"/></rect><rect x="40" y="40" width="6" height="5"><animate attributeName="height" values="5;35;5" dur="1s" repeatCount="indefinite" begin="0.4s"/></rect></g></svg>` },
+            { title: "中心圆点扩散", svg: `<svg width="100" height="100" viewBox="0 0 100 100"><circle cx="50" cy="50" r="5" fill="#f43f5e"><animate attributeName="r" from="5" to="45" dur="2s" repeatCount="indefinite"/><animate attributeName="opacity" values="1;0" dur="2s" repeatCount="indefinite"/></circle></svg>` },
+            { title: "折纸翻转效果", svg: `<svg width="100" height="100" viewBox="0 0 100 100"><path fill="#818cf8" d="M20,20 H80 V80 H20 Z"><animate attributeName="d" values="M20,20 H80 V80 H20 Z; M50,20 H50 V80 H50 Z; M20,20 H80 V80 H20 Z" dur="2s" repeatCount="indefinite"/></path></svg>` },
+            { title: "色彩差速旋转", svg: `<svg width="100" height="100" viewBox="0 0 100 100"><circle cx="50" cy="50" r="30" fill="none" stroke="#f43f5e" stroke-width="4" stroke-dasharray="10,20"><animateTransform attributeName="transform" type="rotate" from="0 50 50" to="360 50 50" dur="3s" repeatCount="indefinite"/></circle><circle cx="50" cy="50" r="20" fill="none" stroke="#818cf8" stroke-width="4" stroke-dasharray="10,20"><animateTransform attributeName="transform" type="rotate" from="360 50 50" to="0 50 50" dur="5s" repeatCount="indefinite"/></circle></svg>` },
+            { title: "水滴平滑滴落", svg: `<svg width="60" height="100" viewBox="0 0 60 100"><circle cx="30" cy="20" r="6" fill="#3b82f6"><animateTransform attributeName="transform" type="translate" values="0,0; 0,60; 0,0" dur="2s" repeatCount="indefinite"/></circle></svg>` },
+            { title: "向上无限箭阵", svg: `<svg width="100" height="100" viewBox="0 0 100 100"><path d="M40,80 L50,70 L60,80" stroke="#818cf8" stroke-width="3" fill="none"><animateTransform attributeName="transform" type="translate" from="0 0" to="0 -60" dur="2s" repeatCount="indefinite"/></path><path d="M40,80 L50,70 L60,80" stroke="#818cf8" stroke-width="3" fill="none" opacity="0.4"><animateTransform attributeName="transform" type="translate" from="0 0" to="0 -60" dur="2s" repeatCount="indefinite" begin="1s"/></path></svg>` },
+            { title: "三角形变换转", svg: `<svg width="100" height="100" viewBox="0 0 100 100"><path d="M50,20 L80,80 L20,80 Z" fill="#f43f5e"><animateTransform attributeName="transform" type="rotate" from="0 50 50" to="360 50 50" dur="4s" repeatCount="indefinite"/></path></svg>` },
+            { title: "星光背景平移", svg: `<svg width="200" height="60" viewBox="0 0 200 60"><circle cx="10" cy="20" r="1.5" fill="#facc15"><animateTransform attributeName="transform" type="translate" from="0 0" to="180 0" dur="5s" repeatCount="indefinite"/></circle><circle cx="50" cy="40" r="1.5" fill="#818cf8"><animateTransform attributeName="transform" type="translate" from="0 0" to="140 0" dur="7s" repeatCount="indefinite"/></circle></svg>` },
+            { title: "加载圆点螺旋", svg: `<svg width="100" height="100" viewBox="0 0 100 100"><circle cx="50" cy="20" r="5" fill="#818cf8"><animateTransform attributeName="transform" type="rotate" from="0 50 50" to="360 50 50" dur="1s" repeatCount="indefinite"/></circle></svg>` },
+            { title: "向下阅读提示", svg: `<svg width="100" height="60" viewBox="0 0 100 60"><path d="M35,20 L50,35 L65,20" stroke="#818cf8" stroke-width="4" fill="none"><animateTransform attributeName="transform" type="translate" values="0,0;0,15;0,0" dur="1.2s" repeatCount="indefinite"/></path></svg>` },
+            { title: "渐隐文字引导", svg: `<svg width="200" height="40" viewBox="0 0 200 40"><text x="50%" y="25" text-anchor="middle" fill="#818cf8" font-size="14">滑动查看详情<animate attributeName="fill" values="#818cf8;#111;#818cf8" dur="2s" repeatCount="indefinite"/></text></svg>` },
+            { title: "雷达波纹探测", svg: `<svg width="100" height="100" viewBox="0 0 100 100"><circle cx="50" cy="50" r="5" stroke="#10b981" fill="none"><animate attributeName="r" from="5" to="45" dur="3s" repeatCount="indefinite"/><animate attributeName="stroke-width" values="4;0" dur="3s" repeatCount="indefinite"/></circle></svg>` },
+
+            // 第五页 (49-60)
+            { title: "电光火石闪烁", svg: `<svg width="100" height="60" viewBox="0 0 100 60"><path d="M10,30 L40,30 L30,50 L70,10 L50,30 L80,30" stroke="#facc15" stroke-width="3" fill="none"><animate attributeName="stroke-width" values="3;6;3" dur="0.5s" repeatCount="indefinite"/></path></svg>` },
+            { title: "正在输入模拟", svg: `<svg width="100" height="40" viewBox="0 0 100 40"><rect x="10" y="10" width="2" height="20" fill="#818cf8"><animate attributeName="opacity" values="1;0;1" dur="1s" repeatCount="indefinite"/></rect><text x="15" y="25" fill="#818cf8" font-size="14">Waiting...</text></svg>` },
+            { title: "对角线条扫过", svg: `<svg width="200" height="80" viewBox="0 0 200 80"><line x1="-50" y1="0" x2="50" y2="80" stroke="#818cf8" stroke-width="10" opacity="0.2"><animateTransform attributeName="transform" type="translate" from="0 0" to="250 0" dur="2.5s" repeatCount="indefinite"/></line></svg>` },
+            { title: "心形平滑变幻", svg: `<svg width="100" height="100" viewBox="0 0 100 100"><path fill="#f43f5e" d="M50,80 Q90,40 50,20 Q10,40 50,80 Z"><animate attributeName="d" values="M50,80 Q90,40 50,20 Q10,40 50,80 Z; M50,70 Q80,30 50,10 Q20,30 50,70 Z; M50,80 Q90,40 50,20 Q10,40 50,80 Z" dur="2s" repeatCount="indefinite"/></path></svg>` },
+            { title: "双线生长动效", svg: `<svg width="200" height="20" viewBox="0 0 200 20"><path fill="none" stroke="#f59e0b" stroke-width="3" d="M100,10 L100,10"><animate attributeName="d" values="M100,10 L100,10; M10,10 L190,10; M100,10 L100,10" dur="2s" repeatCount="indefinite" /></path></svg>` },
+            { title: "螺旋粒子阵列", svg: `<svg width="100" height="100" viewBox="0 0 100 100"><circle cx="50" cy="50" r="30" stroke="#818cf8" stroke-dasharray="2,10" fill="none"><animateTransform attributeName="transform" type="rotate" from="0 50 50" to="360 50 50" dur="10s" repeatCount="indefinite"/></circle></svg>` },
+            { title: "多边形呼吸态", svg: `<svg width="100" height="100" viewBox="0 0 100 100"><polygon points="50,10 90,40 70,90 30,90 10,40" fill="#6366f1"><animateTransform attributeName="transform" type="scale" values="1;1.2;1" dur="2s" repeatCount="indefinite" from="1 1" to="1 1" additive="sum"/></polygon></svg>` },
+            { title: "结尾动态圆点", svg: `<svg viewBox="0 0 200 40"><circle cx="100" cy="20" r="5" fill="#818cf8"><animate attributeName="r" values="5;15;5" dur="2s" repeatCount="indefinite"/></circle></svg>` },
+            { title: "文字填充霓虹", svg: `<svg width="200" height="60" viewBox="0 0 200 60"><text x="10" y="40" font-size="24" font-weight="black" fill="#111">NEON<animate attributeName="fill" values="#111;#818cf8;#111" dur="2s" repeatCount="indefinite"/></text></svg>` },
+            { title: "背景色彩呼吸", svg: `<svg width="200" height="60" viewBox="0 0 200 60"><rect width="200" height="60" fill="#1e293b"><animate attributeName="fill" values="#1e293b;#6366f1;#1e293b" dur="4s" repeatCount="indefinite"/></rect></svg>` },
+            { title: "星光阵列漂移", svg: `<svg width="200" height="60" viewBox="0 0 200 60"><circle cx="20" cy="20" r="1" fill="#facc15"><animateTransform attributeName="transform" type="translate" from="0 0" to="180 0" dur="8s" repeatCount="indefinite"/></circle></svg>` },
+            { title: "最后点缀星星", svg: `<svg width="100" height="100" viewBox="0 0 100 100"><path d="M50,20 L55,40 L75,40 L60,55 L65,75 L50,60 L35,75 L40,55 L25,40 L45,40 Z" fill="#facc15"><animateTransform attributeName="transform" type="scale" values="1.2;0.8;1.2" dur="2s" repeatCount="indefinite" from="1 1" to="1 1" additive="sum"/></path></svg>` }
+        ];
+
+        let currentPage = 1;
+        const itemsPerPage = 12;
+
+        function renderCards() {
+            const container = document.getElementById('cards-container');
+            const template = document.getElementById('card-template');
+            container.innerHTML = '';
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const pageItems = cases.slice(start, end);
+
+            pageItems.forEach((item) => {
+                const clone = template.content.cloneNode(true);
+                const titleEl = clone.querySelector('.card-title');
+                const previewArea = clone.querySelector('.preview-area');
+                const copyBtn = clone.querySelector('.copy-btn');
+                const viewBtn = clone.querySelector('.view-btn');
+
+                titleEl.innerText = item.title;
+                previewArea.innerHTML = item.svg;
+
+                const fullCode = wrapCode(item.svg);
+                
+                copyBtn.onclick = () => performCopy(fullCode, copyBtn);
+                viewBtn.onclick = () => openModal(item.title, fullCode);
+
+                container.appendChild(clone);
+            });
+            updatePagination();
+        }
+
+        function updatePagination() {
+            const pagination = document.getElementById('pagination');
+            pagination.innerHTML = '';
+            const totalPages = Math.ceil(cases.length / itemsPerPage);
+            for (let i = 1; i <= totalPages; i++) {
+                const btn = document.createElement('button');
+                btn.innerText = i;
+                btn.className = `w-10 h-10 rounded-xl border border-slate-200 text-xs font-bold transition-all page-btn ${currentPage === i ? 'active' : 'hover:bg-slate-100'}`;
+                btn.onclick = () => { currentPage = i; renderCards(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+                pagination.appendChild(btn);
+            }
+        }
+
+        function performCopy(text, btn) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                const oldHTML = btn.innerHTML;
+                btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+                btn.classList.add('bg-emerald-500', 'text-white');
+                setTimeout(() => { 
+                    btn.innerHTML = oldHTML; 
+                    btn.classList.remove('bg-emerald-500', 'text-white'); 
+                }, 1000);
+            } catch (err) { console.error('复制失败', err); }
+            document.body.removeChild(textArea);
+        }
+
+        const modal = document.getElementById('codeModal');
+        const modalCode = document.getElementById('modalCode');
+        const modalTitle = document.getElementById('modalTitle');
+
+        function openModal(title, code) {
+            modalTitle.innerText = title;
+            modalCode.innerText = code;
+            modal.classList.remove('hidden');
+        }
+
+        function closeModal() { modal.classList.add('hidden'); }
+        modal.onclick = (e) => { if (e.target === modal) closeModal(); };
+
+        renderCards();
+    </script>
+</body>
+</html>
