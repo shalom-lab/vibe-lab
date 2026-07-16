@@ -4,263 +4,185 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Bookmarklet 压缩工具</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap" rel="stylesheet" />
     <style>
         :root {
-            --bg: #eef2f6;
-            --bg-glow: #d8e8e4;
-            --surface: #fbfcfd;
-            --surface-2: #f3f6f9;
-            --ink: #15202b;
-            --muted: #5f6f7e;
-            --line: #d5dee7;
-            --accent: #0f7a6c;
-            --accent-hover: #0c655a;
-            --accent-soft: rgba(15, 122, 108, 0.12);
-            --danger: #c24141;
-            --radius: 14px;
-            --shadow: 0 18px 40px -28px rgba(21, 32, 43, 0.45);
-            --editor-bg: #fbfcfd;
-            --gutter: #8a9aab;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --secondary: #64748b;
+            --border: #e2e8f0;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --code-bg: #1e1e1e;
+            --radius: 12px;
+            --inner-radius: 8px;
         }
 
-        * { box-sizing: border-box; }
-
-        html, body {
-            height: 100%;
-            margin: 0;
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #0f172a;
+                --card: #1e293b;
+                --border: #334155;
+                --text-main: #f1f5f9;
+                --text-muted: #94a3b8;
+                --code-bg: #000000;
+            }
         }
+
+        * { box-sizing: border-box; transition: all 0.2s ease; }
 
         body {
-            font-family: "Plus Jakarta Sans", system-ui, sans-serif;
-            color: var(--ink);
-            background:
-                radial-gradient(ellipse 80% 50% at 10% -10%, var(--bg-glow), transparent 55%),
-                radial-gradient(ellipse 60% 40% at 100% 0%, #dce4ef, transparent 50%),
-                var(--bg);
-            padding: 18px;
+            margin: 0;
+            font-family: 'Inter', -apple-system, system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text-main);
+            padding: 20px;
+            line-height: 1.5;
+            height: 100vh;
             overflow: hidden;
         }
 
-        .app {
-            max-width: 1180px;
+        .container {
+            max-width: 1400px;
+            margin: auto;
+            display: flex;
+            flex-direction: column;
             height: 100%;
-            margin: 0 auto;
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-            min-height: 0;
-        }
-
-        .topbar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
             gap: 16px;
-            flex-wrap: wrap;
         }
 
-        .brand {
+        /* Header */
+        .header {
             display: flex;
-            flex-direction: column;
-            gap: 2px;
-            min-width: 0;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 4px;
         }
 
-        .brand h1 {
+        .header h1 {
+            font-size: 1.25rem;
             margin: 0;
-            font-size: 1.2rem;
-            font-weight: 700;
-            letter-spacing: -0.02em;
-        }
-
-        .brand p {
-            margin: 0;
-            font-size: 0.78rem;
-            color: var(--muted);
-        }
-
-        .top-actions {
             display: flex;
             align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
+            gap: 8px;
         }
 
         .stats {
-            display: flex;
-            gap: 10px;
             font-size: 0.75rem;
-            color: var(--muted);
-            font-variant-numeric: tabular-nums;
+            color: var(--text-muted);
+            display: flex;
+            gap: 16px;
         }
 
-        .stats span {
-            padding: 6px 10px;
-            border-radius: 999px;
-            background: rgba(255, 255, 255, 0.55);
-            border: 1px solid var(--line);
+        /* Main Layout */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 16px;
+            flex-grow: 1;
+            min-height: 0;
         }
 
-        .name-field {
+        @media (max-width: 900px) {
+            .main-grid { grid-template-columns: 1fr; overflow-y: auto; }
+            body { height: auto; overflow: auto; }
+        }
+
+        .panel {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .panel-header {
+            padding: 8px 12px;
+            background: rgba(0,0,0,0.02);
+            border-bottom: 1px solid var(--border);
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+        }
+
+        .panel-footer {
+            padding: 8px 12px;
+            border-top: 1px solid var(--border);
+            background: rgba(0,0,0,0.01);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            min-height: 45px;
+        }
+
+        .name-input-group {
             display: flex;
             align-items: center;
             gap: 6px;
-            padding: 6px 10px;
-            border-radius: 10px;
-            border: 1px solid var(--line);
-            background: rgba(255, 255, 255, 0.7);
-        }
-
-        .name-field label {
-            font-size: 0.72rem;
-            color: var(--muted);
-            white-space: nowrap;
-        }
-
-        .name-field input {
-            width: 72px;
-            border: none;
-            outline: none;
-            background: transparent;
-            color: var(--ink);
-            font: inherit;
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-
-        .editor-shell {
-            flex: 1;
-            min-height: 0;
-            display: flex;
-            flex-direction: column;
-            background: var(--surface);
-            border: 1px solid var(--line);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            overflow: hidden;
-        }
-
-        .editor-toolbar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            padding: 10px 14px;
-            border-bottom: 1px solid var(--line);
-            background: linear-gradient(180deg, #ffffff, var(--surface-2));
-        }
-
-        .file-chip {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.82rem;
-            font-weight: 600;
-        }
-
-        .file-chip .dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--accent);
-            box-shadow: 0 0 0 3px var(--accent-soft);
-        }
-
-        .tag {
-            font-size: 0.68rem;
-            font-weight: 600;
-            color: var(--accent);
-            background: var(--accent-soft);
-            padding: 3px 8px;
+            background: var(--bg);
+            padding: 2px 8px;
             border-radius: 6px;
-            letter-spacing: 0.02em;
+            border: 1px solid var(--border);
         }
 
-        #editor {
-            flex: 1;
-            min-height: 0;
-            overflow: hidden;
-        }
-
-        .cm-editor {
-            height: 100%;
-            font-size: 13.5px;
-        }
-
-        .cm-editor.cm-focused {
+        .name-input-group input {
+            background: transparent;
+            border: none;
+            color: var(--text-main);
+            font-size: 0.8rem;
+            width: 80px;
             outline: none;
         }
 
-        .cm-scroller {
-            font-family: "IBM Plex Mono", ui-monospace, Consolas, monospace;
-            line-height: 1.65;
+        textarea {
+            width: 100%;
+            flex-grow: 1;
+            border: none;
+            padding: 12px;
+            font-family: 'Fira Code', Consolas, monospace;
+            font-size: 13px;
+            resize: none;
+            background: transparent;
+            color: var(--text-main);
+            outline: none;
+            line-height: 1.6;
         }
 
-        .cm-gutters {
-            background: var(--editor-bg) !important;
-            border-right: 1px solid var(--line) !important;
-            color: var(--gutter) !important;
-        }
-
-        .cm-activeLineGutter {
-            background: rgba(15, 122, 108, 0.06) !important;
-            color: var(--accent) !important;
-        }
-
-        .cm-activeLine {
-            background: rgba(15, 122, 108, 0.045) !important;
-        }
-
-        .cm-content {
-            padding-top: 12px !important;
-            padding-bottom: 12px !important;
-        }
-
-        .editor-footer {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            padding: 10px 14px;
-            border-top: 1px solid var(--line);
-            background: var(--surface-2);
-            flex-wrap: wrap;
+        .output-area {
+            background: var(--code-bg);
+            color: #d4d4d4;
         }
 
         .btn-group {
             display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        button, .bookmark-link {
-            appearance: none;
-            border: 1px solid var(--line);
-            background: var(--surface);
-            color: var(--ink);
-            border-radius: 10px;
-            padding: 8px 12px;
-            font: inherit;
-            font-size: 0.8rem;
-            font-weight: 600;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
             gap: 6px;
-            text-decoration: none;
-            transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
         }
 
-        button:hover:not(:disabled), .bookmark-link:hover {
-            background: #fff;
-            border-color: #b8c5d2;
+        button {
+            padding: 5px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--card);
+            color: var(--text-main);
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
 
-        button:active:not(:disabled) {
-            transform: translateY(1px);
+        button:hover:not(:disabled) {
+            background: var(--bg);
+            border-color: var(--secondary);
         }
 
         button:disabled {
@@ -269,127 +191,138 @@
         }
 
         button.primary {
-            background: var(--accent);
-            border-color: transparent;
-            color: #fff;
-            padding: 9px 16px;
-            box-shadow: 0 10px 20px -12px rgba(15, 122, 108, 0.8);
+            background: var(--primary);
+            color: white;
+            border: none;
         }
 
         button.primary:hover:not(:disabled) {
-            background: var(--accent-hover);
+            background: var(--primary-hover);
         }
 
-        .bookmark-link {
-            display: none;
-            background: var(--accent-soft);
-            border-color: transparent;
-            color: var(--accent);
-            cursor: grab;
+        /* Bookmark Link */
+        .bookmark-preview {
+            padding: 4px 12px;
+            background: var(--primary);
+            color: white !important;
+            text-decoration: none;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: move;
+            display: inline-block;
         }
 
-        .bookmark-link.is-visible {
-            display: inline-flex;
-        }
-
+        /* Toast UI */
         #toast {
             position: fixed;
+            bottom: 24px;
             left: 50%;
-            bottom: 28px;
-            transform: translateX(-50%) translateY(20px);
-            background: var(--ink);
-            color: #fff;
-            padding: 10px 18px;
-            border-radius: 999px;
+            transform: translateX(-50%) translateY(100px);
+            background: #1e293b;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
             font-size: 0.85rem;
-            font-weight: 600;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
             opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.2s ease, transform 0.2s ease;
-            z-index: 20;
+            z-index: 1000;
         }
 
         #toast.show {
-            opacity: 1;
             transform: translateX(-50%) translateY(0);
+            opacity: 1;
         }
 
-        @media (max-width: 720px) {
-            body {
-                padding: 12px;
-                overflow: auto;
-            }
-
-            .app {
-                height: auto;
-                min-height: calc(100vh - 24px);
-            }
-
-            #editor {
-                min-height: 52vh;
-            }
-
-            .topbar {
-                align-items: flex-start;
-            }
+        .tag {
+            font-size: 0.7rem;
+            padding: 1px 6px;
+            border-radius: 4px;
+            background: var(--border);
+            color: var(--text-muted);
         }
     </style>
 </head>
 <body>
-<div class="app">
-    <header class="topbar">
-        <div class="brand">
-            <h1>Bookmarklet</h1>
-            <p>写 JS → 一键压缩复制为书签链接</p>
-        </div>
-        <div class="top-actions">
-            <div class="stats">
-                <span id="charCount">源码 0</span>
-                <span id="minCount">压缩后 —</span>
-            </div>
-            <div class="name-field">
-                <label for="bmName">名称</label>
-                <input id="bmName" type="text" value="Go" maxlength="24" />
-            </div>
-            <button class="primary" type="button" id="generateBtn">压缩并复制</button>
-        </div>
-    </header>
 
-    <section class="editor-shell">
-        <div class="editor-toolbar">
-            <div class="file-chip">
-                <span class="dot" aria-hidden="true"></span>
-                <span>bookmarklet.js</span>
-            </div>
-            <span class="tag">ES6+</span>
+<div class="container">
+    <div class="header">
+        <h1>🔖 Bookmarklet 压缩工具</h1>
+        <div class="stats">
+            <div id="charCount">源码: 0</div>
+            <div id="minCount">压缩后: 0</div>
         </div>
-        <div id="editor"></div>
-        <div class="editor-footer">
-            <div class="btn-group">
-                <button type="button" id="importBtn">导入</button>
-                <button type="button" id="saveBtn" disabled>保存</button>
-                <button type="button" id="clearBtn">清空</button>
+    </div>
+
+    <div class="main-grid">
+        <!-- Editor (Left Panel) -->
+        <div class="panel">
+            <div class="panel-header">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span>JavaScript 源码</span>
+                    <div class="name-input-group">
+                        <span style="font-size: 0.75rem; color: var(--text-muted);">名称:</span>
+                        <input type="text" id="bmName" value="Go">
+                    </div>
+                </div>
+                <span class="tag">ES6+</span>
             </div>
-            <a id="dragLink" class="bookmark-link" href="#" title="拖到浏览器书签栏" onclick="return false;">拖到书签栏</a>
+            
+            <textarea id="inputCode" spellcheck="false" placeholder="在此输入或粘贴 JS 代码..."></textarea>
+            
+            <div class="panel-footer">
+                <div class="btn-group">
+                    <button onclick="importFileFromLocal()">📂 导入</button>
+                    <button id="saveBtn" onclick="saveFileToLocal()">💾 保存</button>
+                    <button onclick="clearAll()">🧹 清空</button>
+                </div>
+            </div>
         </div>
-    </section>
+
+        <!-- Result (Right Panel) -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>生成结果</span>
+                <div id="testArea" style="display:none;">
+                    <a id="dragLink" class="bookmark-preview" href="#" title="拖拽到书签栏" onclick="return false;">Go</a>
+                </div>
+            </div>
+            
+            <textarea id="outputCode" class="output-area" readonly placeholder="压缩后的链接将出现在这里..."></textarea>
+
+            <div class="panel-footer" style="justify-content: flex-end;">
+                <button class="primary" onclick="generate()">📋 压缩并复制</button>
+            </div>
+        </div>
+    </div>
 </div>
 
-<div id="toast" role="status">已复制到剪贴板</div>
+<div id="toast">已复制到剪贴板</div>
 
-<script type="module">
-    import { EditorView, basicSetup } from "https://esm.sh/codemirror@6.0.1";
-    import { EditorState } from "https://esm.sh/@codemirror/state@6.5.2";
-    import { javascript } from "https://esm.sh/@codemirror/lang-javascript@6.2.3";
-    import { oneDark } from "https://esm.sh/@codemirror/theme-one-dark@6.1.3";
+<script>
+    const inputArea = document.getElementById('inputCode');
+    const outputArea = document.getElementById('outputCode');
+    const dragLink = document.getElementById('dragLink');
+    const testArea = document.getElementById('testArea');
+    const charCount = document.getElementById('charCount');
+    const minCount = document.getElementById('minCount');
+    const bmNameInput = document.getElementById('bmName');
+    const saveBtn = document.getElementById('saveBtn');
 
-    const DEFAULT_CODE = `(function() {
+    window.onload = () => {
+        const saved = localStorage.getItem('bm_code_cache');
+        const savedName = localStorage.getItem('bm_name_cache');
+        
+        if (saved) {
+            inputArea.value = saved;
+        } else {
+            inputArea.value = `(function() {
   const ruleList = [
     {
       urlpattern: 'github.io/Spark',
       storage: [
         { "spark_repo": "shalom-lab/Spark" },
-        { "spark_token": "YOUR_TOKEN_HERE" }
+        { "spark_token": "YOUR_TOKEN_HERE" } 
       ]
     },
     {
@@ -415,98 +348,55 @@
     }
   });
 })();`;
+        }
+        
+        if (savedName) bmNameInput.value = savedName;
+        
+        updateStats();
+        updateButtonStates();
+    };
 
-    const charCount = document.getElementById("charCount");
-    const minCount = document.getElementById("minCount");
-    const bmNameInput = document.getElementById("bmName");
-    const saveBtn = document.getElementById("saveBtn");
-    const dragLink = document.getElementById("dragLink");
-    const toastEl = document.getElementById("toast");
+    inputArea.addEventListener('input', () => {
+        updateStats();
+        updateButtonStates();
+        localStorage.setItem('bm_code_cache', inputArea.value);
+    });
 
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const savedCode = localStorage.getItem("bm_code_cache");
-    const savedName = localStorage.getItem("bm_name_cache");
-    if (savedName) bmNameInput.value = savedName;
+    bmNameInput.addEventListener('input', () => {
+        localStorage.setItem('bm_name_cache', bmNameInput.value);
+        if (testArea.style.display !== 'none') {
+            dragLink.innerText = bmNameInput.value || "Go";
+        }
+    });
 
-    let editor;
-
-    function getCode() {
-        return editor ? editor.state.doc.toString() : "";
-    }
-
-    function setCode(code) {
-        editor.dispatch({
-            changes: { from: 0, to: editor.state.doc.length, insert: code }
-        });
+    function updateButtonStates() {
+        saveBtn.disabled = !inputArea.value.trim();
     }
 
     function updateStats() {
-        const len = getCode().length;
-        charCount.textContent = `源码 ${len}`;
-        saveBtn.disabled = !getCode().trim();
+        charCount.textContent = `源码: ${inputArea.value.length}`;
     }
 
     function showToast(msg) {
-        toastEl.textContent = msg;
-        toastEl.classList.add("show");
-        clearTimeout(showToast._t);
-        showToast._t = setTimeout(() => toastEl.classList.remove("show"), 2000);
-    }
-
-    function minify(code) {
-        return code
-            .replace(/\/\/.*$/gm, "")
-            .replace(/\/\*[\s\S]*?\*\//g, "")
-            .replace(/\n\s+/g, "\n")
-            .replace(/\s+\n/g, "\n")
-            .replace(/\n+/g, " ")
-            .replace(/\s{2,}/g, " ")
-            .trim();
-    }
-
-    async function copyToClipboard(text) {
-        try {
-            await navigator.clipboard.writeText(text);
-            showToast("已复制到剪贴板");
-        } catch {
-            const ta = document.createElement("textarea");
-            ta.value = text;
-            document.body.appendChild(ta);
-            ta.select();
-            document.execCommand("copy");
-            document.body.removeChild(ta);
-            showToast("已复制到剪贴板");
-        }
-    }
-
-    function generate() {
-        const code = getCode().trim();
-        if (!code) return showToast("请输入代码");
-
-        const finalUrl = "javascript:" + encodeURIComponent(minify(code));
-        minCount.textContent = `压缩后 ${finalUrl.length}`;
-
-        const name = bmNameInput.value.trim() || "Go";
-        dragLink.href = finalUrl;
-        dragLink.textContent = `拖到书签栏 · ${name}`;
-        dragLink.classList.add("is-visible");
-
-        copyToClipboard(finalUrl);
+        const toast = document.getElementById('toast');
+        toast.textContent = msg;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2000);
     }
 
     function importFileFromLocal() {
-        const input = document.createElement("input");
-        input.type = "file";
-        input.accept = ".js,text/javascript";
-        input.onchange = (e) => {
-            const file = e.target.files?.[0];
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.js';
+        input.onchange = e => {
+            const file = e.target.files[0];
             if (!file) return;
             const reader = new FileReader();
-            reader.onload = (ev) => {
-                setCode(String(ev.target.result || ""));
-                localStorage.setItem("bm_code_cache", getCode());
+            reader.onload = ev => {
+                inputArea.value = ev.target.result;
                 updateStats();
-                showToast("导入成功");
+                updateButtonStates();
+                showToast('导入成功');
             };
             reader.readAsText(file);
         };
@@ -514,84 +404,68 @@
     }
 
     function saveFileToLocal() {
-        const code = getCode().trim();
+        const code = inputArea.value.trim();
         if (!code) return;
-        const blob = new Blob([code], { type: "text/javascript" });
+        const blob = new Blob([code], { type: 'text/javascript' });
         const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
+        const a = document.createElement('a');
         a.href = url;
-        a.download = "bookmarklet.js";
+        // 修改默认保存文件名为 bookmarklet.js
+        a.download = 'bookmarklet.js';
         a.click();
         URL.revokeObjectURL(url);
-        showToast("已保存");
+        showToast('已保存');
+    }
+
+    function minify(code) {
+        return code
+            .replace(/\/\/.*$/gm, '')           
+            .replace(/\/\*[\s\S]*?\*\//g, '')   
+            .replace(/\n\s+/g, '\n')            
+            .replace(/\s+\n/g, '\n')            
+            .replace(/\n+/g, ' ')               
+            .replace(/\s{2,}/g, ' ')            
+            .trim();
+    }
+
+    function generate() {
+        let code = inputArea.value.trim();
+        if (!code) return showToast('请输入代码');
+
+        let minified = minify(code);
+        const finalUrl = 'javascript:' + encodeURIComponent(minified);
+
+        outputArea.value = finalUrl;
+        minCount.textContent = `压缩后: ${finalUrl.length}`;
+        
+        testArea.style.display = 'block';
+        dragLink.href = finalUrl;
+        dragLink.innerText = bmNameInput.value || "Go";
+
+        copyToClipboard(finalUrl);
+    }
+
+    function copyToClipboard(text) {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        showToast('已复制到剪贴板');
+        document.body.removeChild(textArea);
     }
 
     function clearAll() {
-        if (!confirm("确定清空吗？")) return;
-        setCode("");
-        minCount.textContent = "压缩后 —";
-        dragLink.classList.remove("is-visible");
-        dragLink.removeAttribute("href");
-        localStorage.removeItem("bm_code_cache");
-        updateStats();
-    }
-
-    const extensions = [
-        basicSetup,
-        javascript(),
-        EditorView.lineWrapping,
-        EditorView.updateListener.of((update) => {
-            if (!update.docChanged) return;
-            localStorage.setItem("bm_code_cache", getCode());
+        if(confirm('确定清空吗？')) {
+            inputArea.value = '';
+            outputArea.value = '';
+            testArea.style.display = 'none';
             updateStats();
-        }),
-        EditorView.theme({
-            "&": { height: "100%", backgroundColor: "var(--editor-bg)" },
-            ".cm-scroller": { overflow: "auto" },
-            ".cm-content": { caretColor: "var(--accent)" },
-            "&.cm-focused .cm-cursor": { borderLeftColor: "var(--accent)" },
-            "&.cm-focused .cm-selectionBackground, .cm-selectionBackground": {
-                backgroundColor: "rgba(15, 122, 108, 0.18) !important"
-            }
-        })
-    ];
-
-    // 系统深色时用 oneDark，否则保持浅色编辑区
-    if (prefersDark) {
-        document.documentElement.style.setProperty("--bg", "#0f1419");
-        document.documentElement.style.setProperty("--bg-glow", "#16322c");
-        document.documentElement.style.setProperty("--surface", "#171d24");
-        document.documentElement.style.setProperty("--surface-2", "#1c242d");
-        document.documentElement.style.setProperty("--ink", "#e8eef4");
-        document.documentElement.style.setProperty("--muted", "#93a4b5");
-        document.documentElement.style.setProperty("--line", "#2b3642");
-        document.documentElement.style.setProperty("--editor-bg", "#171d24");
-        document.documentElement.style.setProperty("--gutter", "#6d7d8f");
-        document.documentElement.style.setProperty("--shadow", "0 18px 40px -24px rgba(0,0,0,0.7)");
-        extensions.push(oneDark);
-    }
-
-    editor = new EditorView({
-        state: EditorState.create({
-            doc: savedCode ?? DEFAULT_CODE,
-            extensions
-        }),
-        parent: document.getElementById("editor")
-    });
-
-    updateStats();
-
-    document.getElementById("generateBtn").addEventListener("click", generate);
-    document.getElementById("importBtn").addEventListener("click", importFileFromLocal);
-    document.getElementById("saveBtn").addEventListener("click", saveFileToLocal);
-    document.getElementById("clearBtn").addEventListener("click", clearAll);
-    bmNameInput.addEventListener("input", () => {
-        localStorage.setItem("bm_name_cache", bmNameInput.value);
-        if (dragLink.classList.contains("is-visible")) {
-            const name = bmNameInput.value.trim() || "Go";
-            dragLink.textContent = `拖到书签栏 · ${name}`;
+            updateButtonStates();
+            localStorage.removeItem('bm_code_cache');
         }
-    });
+    }
 </script>
+
 </body>
 </html>
