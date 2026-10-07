@@ -11,57 +11,61 @@
         body {
             font-family: 'DM Sans', system-ui, sans-serif;
             background:
-                radial-gradient(ellipse 80% 50% at 20% -10%, rgba(34, 197, 94, 0.12), transparent),
-                radial-gradient(ellipse 60% 40% at 90% 10%, rgba(56, 189, 248, 0.08), transparent),
-                #0a0e14;
-            color: #e6edf3;
+                radial-gradient(ellipse 80% 50% at 15% -5%, rgba(16, 185, 129, 0.1), transparent),
+                radial-gradient(ellipse 50% 40% at 95% 5%, rgba(14, 165, 233, 0.08), transparent),
+                #f4f7fb;
+            color: #1e293b;
             min-height: 100vh;
         }
         .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
         .panel {
-            background: rgba(22, 27, 34, 0.85);
-            border: 1px solid rgba(48, 54, 61, 0.9);
+            background: rgba(255, 255, 255, 0.92);
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
             backdrop-filter: blur(12px);
         }
         .key-display {
-            background: #010409;
-            border: 1px solid #21262d;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
             letter-spacing: 0.02em;
             word-break: break-all;
         }
         .btn-primary {
-            background: linear-gradient(135deg, #238636, #2ea043);
+            background: linear-gradient(135deg, #059669, #10b981);
             transition: filter 0.15s, transform 0.15s;
         }
-        .btn-primary:hover { filter: brightness(1.08); }
+        .btn-primary:hover { filter: brightness(1.05); }
         .btn-primary:active { transform: scale(0.98); }
         .btn-ghost {
-            background: #21262d;
-            border: 1px solid #30363d;
+            background: #fff;
+            border: 1px solid #e2e8f0;
             transition: background 0.15s, border-color 0.15s;
         }
-        .btn-ghost:hover { background: #30363d; border-color: #484f58; }
+        .btn-ghost:hover { background: #f1f5f9; border-color: #cbd5e1; }
+        .btn-ghost:disabled { opacity: 0.45; cursor: not-allowed; }
         .btn-danger {
             background: transparent;
-            border: 1px solid #da3633;
-            color: #f85149;
+            border: 1px solid #fca5a5;
+            color: #dc2626;
             transition: background 0.15s;
         }
-        .btn-danger:hover { background: rgba(218, 54, 51, 0.15); }
+        .btn-danger:hover { background: rgba(220, 38, 38, 0.08); }
         input[type="range"] {
-            accent-color: #3fb950;
+            accent-color: #10b981;
         }
         .chip {
-            border: 1px solid #30363d;
-            background: #161b22;
+            border: 1px solid #e2e8f0;
+            background: #fff;
+            color: #475569;
             transition: border-color 0.15s, background 0.15s, color 0.15s;
             cursor: pointer;
             user-select: none;
         }
+        .chip:hover { border-color: #cbd5e1; background: #f8fafc; }
         .chip.active {
-            border-color: #3fb950;
-            background: rgba(63, 185, 80, 0.12);
-            color: #3fb950;
+            border-color: #10b981;
+            background: rgba(16, 185, 129, 0.1);
+            color: #059669;
         }
         .toast {
             position: fixed;
@@ -77,25 +81,25 @@
             opacity: 1;
         }
         .modal-backdrop {
-            background: rgba(1, 4, 9, 0.72);
+            background: rgba(15, 23, 42, 0.35);
             backdrop-filter: blur(4px);
         }
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
     </style>
 </head>
 <body class="p-4 md:p-8">
     <div class="max-w-3xl mx-auto">
         <header class="mb-8">
-            <a href="index.html" class="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-300 transition-colors mb-4">
+            <a href="index.html" class="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800 transition-colors mb-4">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
                 </svg>
                 Vibe Lab
             </a>
-            <h1 class="text-3xl md:text-4xl font-bold tracking-tight text-white mb-2">API Key 生成器</h1>
-            <p class="text-slate-400 text-sm md:text-base">
+            <h1 class="text-3xl md:text-4xl font-bold tracking-tight text-slate-900 mb-2">API Key 生成器</h1>
+            <p class="text-slate-500 text-sm md:text-base">
                 用加密安全随机数生成密钥串，本地 IndexedDB 保存与删除
             </p>
         </header>
@@ -103,47 +107,47 @@
         <!-- Generator -->
         <section class="panel rounded-xl p-5 md:p-6 mb-6">
             <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
-                <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-400">生成</h2>
-                <span class="mono text-xs text-slate-500">crypto.getRandomValues</span>
+                <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-500">生成</h2>
+                <span class="mono text-xs text-slate-400">crypto.getRandomValues</span>
             </div>
 
-            <div class="key-display mono rounded-lg p-4 md:p-5 text-sm md:text-base text-emerald-400 min-h-[3.5rem] flex items-center mb-5" id="keyOutput">
+            <div class="key-display mono rounded-lg p-4 md:p-5 text-sm md:text-base text-emerald-700 min-h-[3.5rem] flex items-center mb-5" id="keyOutput">
                 点击下方生成密钥…
             </div>
 
             <div class="space-y-5 mb-6">
                 <div>
                     <div class="flex items-center justify-between gap-3 mb-2">
-                        <label class="text-sm text-slate-300" for="lenInput">长度（位数）</label>
+                        <label class="text-sm text-slate-700" for="lenInput">长度（位数）</label>
                         <div class="flex items-center gap-2">
                             <input id="lenInput" type="number" min="1" max="512" value="32" step="1"
-                                class="mono w-20 rounded-md bg-[#010409] border border-[#30363d] px-2 py-1 text-sm text-emerald-400 text-right focus:outline-none focus:border-emerald-600">
+                                class="mono w-20 rounded-md bg-white border border-slate-200 px-2 py-1 text-sm text-emerald-700 text-right focus:outline-none focus:border-emerald-500">
                             <span class="text-xs text-slate-500">位</span>
                         </div>
                     </div>
                     <input id="lenRange" type="range" min="1" max="512" value="32" step="1" class="w-full">
-                    <div class="flex justify-between text-xs text-slate-600 mt-1 mono">
+                    <div class="flex justify-between text-xs text-slate-400 mt-1 mono">
                         <span>1</span>
-                        <span class="text-slate-500">可输入 1–512，或拖动滑条</span>
+                        <span>可输入 1–512，或拖动滑条</span>
                         <span>512</span>
                     </div>
                 </div>
 
                 <div>
-                    <p class="text-sm text-slate-300 mb-2">字符集</p>
+                    <p class="text-sm text-slate-700 mb-2">字符集</p>
                     <div class="flex flex-wrap gap-2" id="charsetChips">
                         <button type="button" class="chip active rounded-md px-3 py-1.5 text-sm" data-set="base62">Base62（推荐）</button>
-                        <button type="button" class="chip rounded-md px-3 py-1.5 text-sm text-slate-300" data-set="hex">Hex</button>
-                        <button type="button" class="chip rounded-md px-3 py-1.5 text-sm text-slate-300" data-set="base64url">Base64URL</button>
-                        <button type="button" class="chip rounded-md px-3 py-1.5 text-sm text-slate-300" data-set="alnum">字母数字</button>
-                        <button type="button" class="chip rounded-md px-3 py-1.5 text-sm text-slate-300" data-set="symbols">含符号</button>
+                        <button type="button" class="chip rounded-md px-3 py-1.5 text-sm" data-set="hex">Hex</button>
+                        <button type="button" class="chip rounded-md px-3 py-1.5 text-sm" data-set="base64url">Base64URL</button>
+                        <button type="button" class="chip rounded-md px-3 py-1.5 text-sm" data-set="alnum">字母数字</button>
+                        <button type="button" class="chip rounded-md px-3 py-1.5 text-sm" data-set="symbols">含符号</button>
                     </div>
                 </div>
 
                 <div>
-                    <label class="text-sm text-slate-300 mb-2 block" for="prefixInput">前缀（可选）</label>
+                    <label class="text-sm text-slate-700 mb-2 block" for="prefixInput">前缀（可选）</label>
                     <input id="prefixInput" type="text" placeholder="例如 sk_ 或 key_" maxlength="24"
-                        class="w-full mono rounded-lg bg-[#010409] border border-[#30363d] px-3 py-2.5 text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-emerald-600">
+                        class="w-full mono rounded-lg bg-white border border-slate-200 px-3 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500">
                 </div>
             </div>
 
@@ -151,10 +155,10 @@
                 <button type="button" id="btnGenerate" class="btn-primary text-white font-medium rounded-lg px-4 py-2.5 text-sm">
                     生成密钥
                 </button>
-                <button type="button" id="btnCopy" class="btn-ghost text-slate-200 rounded-lg px-4 py-2.5 text-sm" disabled>
+                <button type="button" id="btnCopy" class="btn-ghost text-slate-700 rounded-lg px-4 py-2.5 text-sm" disabled>
                     复制
                 </button>
-                <button type="button" id="btnSave" class="btn-ghost text-slate-200 rounded-lg px-4 py-2.5 text-sm" disabled>
+                <button type="button" id="btnSave" class="btn-ghost text-slate-700 rounded-lg px-4 py-2.5 text-sm" disabled>
                     保存到本地
                 </button>
             </div>
@@ -163,28 +167,28 @@
         <!-- Saved list -->
         <section class="panel rounded-xl p-5 md:p-6">
             <div class="flex items-center justify-between mb-5">
-                <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-400">已保存</h2>
-                <span class="mono text-xs text-slate-500" id="savedCount">0</span>
+                <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-500">已保存</h2>
+                <span class="mono text-xs text-slate-400" id="savedCount">0</span>
             </div>
             <ul id="keyList" class="space-y-3">
-                <li class="text-sm text-slate-500 py-6 text-center" id="emptyState">暂无保存的密钥，生成后点击「保存到本地」</li>
+                <li class="text-sm text-slate-400 py-6 text-center" id="emptyState">暂无保存的密钥，生成后点击「保存到本地」</li>
             </ul>
         </section>
 
-        <p class="text-center text-xs text-slate-600 mt-8 mb-4">
+        <p class="text-center text-xs text-slate-400 mt-8 mb-4">
             数据仅存于本机 IndexedDB（库名 <span class="mono">vibe-apikey</span>），不会上传
         </p>
     </div>
 
     <!-- Save modal -->
     <div id="saveModal" class="fixed inset-0 z-40 hidden items-center justify-center p-4 modal-backdrop">
-        <div class="panel rounded-xl p-5 w-full max-w-md shadow-2xl">
-            <h3 class="text-lg font-semibold text-white mb-1">保存密钥</h3>
-            <p class="text-sm text-slate-400 mb-4">给这条密钥起个备注名，方便以后辨认</p>
+        <div class="panel rounded-xl p-5 w-full max-w-md shadow-xl">
+            <h3 class="text-lg font-semibold text-slate-900 mb-1">保存密钥</h3>
+            <p class="text-sm text-slate-500 mb-4">给这条密钥起个备注名，方便以后辨认</p>
             <input id="labelInput" type="text" placeholder="例如 OpenAI / 测试环境"
-                class="w-full rounded-lg bg-[#010409] border border-[#30363d] px-3 py-2.5 text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-emerald-600 mb-4">
+                class="w-full rounded-lg bg-white border border-slate-200 px-3 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 mb-4">
             <div class="flex justify-end gap-2">
-                <button type="button" id="btnCancelSave" class="btn-ghost text-slate-300 rounded-lg px-4 py-2 text-sm">取消</button>
+                <button type="button" id="btnCancelSave" class="btn-ghost text-slate-700 rounded-lg px-4 py-2 text-sm">取消</button>
                 <button type="button" id="btnConfirmSave" class="btn-primary text-white font-medium rounded-lg px-4 py-2 text-sm">确认保存</button>
             </div>
         </div>
@@ -192,18 +196,18 @@
 
     <!-- Delete modal -->
     <div id="deleteModal" class="fixed inset-0 z-40 hidden items-center justify-center p-4 modal-backdrop">
-        <div class="panel rounded-xl p-5 w-full max-w-md shadow-2xl">
-            <h3 class="text-lg font-semibold text-white mb-1">确认删除？</h3>
-            <p class="text-sm text-slate-400 mb-2">将从本机 IndexedDB 永久移除：</p>
-            <p class="mono text-sm text-slate-300 mb-4 truncate" id="deleteLabel"></p>
+        <div class="panel rounded-xl p-5 w-full max-w-md shadow-xl">
+            <h3 class="text-lg font-semibold text-slate-900 mb-1">确认删除？</h3>
+            <p class="text-sm text-slate-500 mb-2">将从本机 IndexedDB 永久移除：</p>
+            <p class="mono text-sm text-slate-700 mb-4 truncate" id="deleteLabel"></p>
             <div class="flex justify-end gap-2">
-                <button type="button" id="btnCancelDelete" class="btn-ghost text-slate-300 rounded-lg px-4 py-2 text-sm">取消</button>
+                <button type="button" id="btnCancelDelete" class="btn-ghost text-slate-700 rounded-lg px-4 py-2 text-sm">取消</button>
                 <button type="button" id="btnConfirmDelete" class="btn-danger rounded-lg px-4 py-2 text-sm">删除</button>
             </div>
         </div>
     </div>
 
-    <div id="toast" class="toast panel rounded-lg px-4 py-2.5 text-sm text-emerald-300 shadow-lg"></div>
+    <div id="toast" class="toast panel rounded-lg px-4 py-2.5 text-sm text-emerald-700 shadow-lg"></div>
 
     <script>
         const DB_NAME = 'vibe-apikey';
@@ -369,19 +373,19 @@
             els.keyList.innerHTML = '';
             for (const row of rows) {
                 const li = document.createElement('li');
-                li.className = 'rounded-lg border border-[#30363d] bg-[#010409] p-3 md:p-4';
+                li.className = 'rounded-lg border border-slate-200 bg-slate-50 p-3 md:p-4';
                 li.innerHTML = `
                     <div class="flex items-start justify-between gap-3 mb-2">
                         <div class="min-w-0">
-                            <p class="font-medium text-slate-200 truncate">${escapeHtml(row.label || '未命名')}</p>
+                            <p class="font-medium text-slate-800 truncate">${escapeHtml(row.label || '未命名')}</p>
                             <p class="text-xs text-slate-500 mt-0.5">${formatTime(row.createdAt)} · ${row.charset || ''} · ${row.length || row.value.length} 位</p>
                         </div>
                         <div class="flex gap-1.5 shrink-0">
-                            <button type="button" data-copy="${escapeAttr(row.id)}" class="btn-ghost text-slate-300 rounded-md px-2.5 py-1.5 text-xs">复制</button>
+                            <button type="button" data-copy="${escapeAttr(row.id)}" class="btn-ghost text-slate-700 rounded-md px-2.5 py-1.5 text-xs">复制</button>
                             <button type="button" data-del="${escapeAttr(row.id)}" class="btn-danger rounded-md px-2.5 py-1.5 text-xs">删除</button>
                         </div>
                     </div>
-                    <p class="mono text-xs md:text-sm text-emerald-500/90 break-all">${escapeHtml(row.value)}</p>
+                    <p class="mono text-xs md:text-sm text-emerald-700 break-all">${escapeHtml(row.value)}</p>
                 `;
                 els.keyList.appendChild(li);
             }
@@ -445,7 +449,6 @@
             charset = btn.dataset.set;
             document.querySelectorAll('#charsetChips .chip').forEach((c) => {
                 c.classList.toggle('active', c === btn);
-                c.classList.toggle('text-slate-300', c !== btn);
             });
         });
 
