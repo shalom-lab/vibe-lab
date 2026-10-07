@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Key 生成器 - Vibe Lab</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'DM Sans', system-ui, sans-serif;
+            background:
+                radial-gradient(ellipse 80% 50% at 20% -10%, rgba(34, 197, 94, 0.12), transparent),
+                radial-gradient(ellipse 60% 40% at 90% 10%, rgba(56, 189, 248, 0.08), transparent),
+                #0a0e14;
+            color: #e6edf3;
+            min-height: 100vh;
+        }
+        .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+        .panel {
+            background: rgba(22, 27, 34, 0.85);
+            border: 1px solid rgba(48, 54, 61, 0.9);
+            backdrop-filter: blur(12px);
+        }
+        .key-display {
+            background: #010409;
+            border: 1px solid #21262d;
+            letter-spacing: 0.02em;
+            word-break: break-all;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #238636, #2ea043);
+            transition: filter 0.15s, transform 0.15s;
+        }
+        .btn-primary:hover { filter: brightness(1.08); }
+        .btn-primary:active { transform: scale(0.98); }
+        .btn-ghost {
+            background: #21262d;
+            border: 1px solid #30363d;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .btn-ghost:hover { background: #30363d; border-color: #484f58; }
+        .btn-danger {
+            background: transparent;
+            border: 1px solid #da3633;
+            color: #f85149;
+            transition: background 0.15s;
+        }
+        .btn-danger:hover { background: rgba(218, 54, 51, 0.15); }
+        input[type="range"] {
+            accent-color: #3fb950;
+        }
+        .chip {
+            border: 1px solid #30363d;
+            background: #161b22;
+            transition: border-color 0.15s, background 0.15s, color 0.15s;
+            cursor: pointer;
+            user-select: none;
+        }
+        .chip.active {
+            border-color: #3fb950;
+            background: rgba(63, 185, 80, 0.12);
+            color: #3fb950;
+        }
+        .toast {
+            position: fixed;
+            bottom: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(120%);
+            opacity: 0;
+            transition: transform 0.25s ease, opacity 0.25s ease;
+            z-index: 50;
+        }
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+        .modal-backdrop {
+            background: rgba(1, 4, 9, 0.72);
+            backdrop-filter: blur(4px);
+        }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 4px; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="max-w-3xl mx-auto">
+        <header class="mb-8">
+            <a href="index.html" class="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-300 transition-colors mb-4">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+                Vibe Lab
+            </a>
+            <h1 class="text-3xl md:text-4xl font-bold tracking-tight text-white mb-2">API Key 生成器</h1>
+            <p class="text-slate-400 text-sm md:text-base">
+                用加密安全随机数生成密钥串，本地 IndexedDB 保存与删除
+            </p>
+        </header>
+
+        <!-- Generator -->
+        <section class="panel rounded-xl p-5 md:p-6 mb-6">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+                <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-400">生成</h2>
+                <span class="mono text-xs text-slate-500">crypto.getRandomValues</span>
+            </div>
+
+            <div class="key-display mono rounded-lg p-4 md:p-5 text-sm md:text-base text-emerald-400 min-h-[3.5rem] flex items-center mb-5" id="keyOutput">
+                点击下方生成密钥…
+            </div>
+
+            <div class="space-y-5 mb-6">
+                <div>
+                    <div class="flex items-center justify-between gap-3 mb-2">
+                        <label class="text-sm text-slate-300" for="lenInput">长度（位数）</label>
+                        <div class="flex items-center gap-2">
+                            <input id="lenInput" type="number" min="1" max="512" value="32" step="1"
+                                class="mono w-20 rounded-md bg-[#010409] border border-[#30363d] px-2 py-1 text-sm text-emerald-400 text-right focus:outline-none focus:border-emerald-600">
+                            <span class="text-xs text-slate-500">位</span>
+                        </div>
+                    </div>
+                    <input id="lenRange" type="range" min="1" max="512" value="32" step="1" class="w-full">
+                    <div class="flex justify-between text-xs text-slate-600 mt-1 mono">
+                        <span>1</span>
+                        <span class="text-slate-500">可输入 1–512，或拖动滑条</span>
+                        <span>512</span>
+                    </div>
+                </div>
+
+                <div>
+                    <p class="text-sm text-slate-300 mb-2">字符集</p>
+                    <div class="flex flex-wrap gap-2" id="charsetChips">
+                        <button type="button" class="chip active rounded-md px-3 py-1.5 text-sm" data-set="base62">Base62（推荐）</button>
+                        <button type="button" class="chip rounded-md px-3 py-1.5 text-sm text-slate-300" data-set="hex">Hex</button>
+                        <button type="button" class="chip rounded-md px-3 py-1.5 text-sm text-slate-300" data-set="base64url">Base64URL</button>
+                        <button type="button" class="chip rounded-md px-3 py-1.5 text-sm text-slate-300" data-set="alnum">字母数字</button>
+                        <button type="button" class="chip rounded-md px-3 py-1.5 text-sm text-slate-300" data-set="symbols">含符号</button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-sm text-slate-300 mb-2 block" for="prefixInput">前缀（可选）</label>
+                    <input id="prefixInput" type="text" placeholder="例如 sk_ 或 key_" maxlength="24"
+                        class="w-full mono rounded-lg bg-[#010409] border border-[#30363d] px-3 py-2.5 text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-emerald-600">
+                </div>
+            </div>
+
+            <div class="flex flex-wrap gap-2">
+                <button type="button" id="btnGenerate" class="btn-primary text-white font-medium rounded-lg px-4 py-2.5 text-sm">
+                    生成密钥
+                </button>
+                <button type="button" id="btnCopy" class="btn-ghost text-slate-200 rounded-lg px-4 py-2.5 text-sm" disabled>
+                    复制
+                </button>
+                <button type="button" id="btnSave" class="btn-ghost text-slate-200 rounded-lg px-4 py-2.5 text-sm" disabled>
+                    保存到本地
+                </button>
+            </div>
+        </section>
+
+        <!-- Saved list -->
+        <section class="panel rounded-xl p-5 md:p-6">
+            <div class="flex items-center justify-between mb-5">
+                <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-400">已保存</h2>
+                <span class="mono text-xs text-slate-500" id="savedCount">0</span>
+            </div>
+            <ul id="keyList" class="space-y-3">
+                <li class="text-sm text-slate-500 py-6 text-center" id="emptyState">暂无保存的密钥，生成后点击「保存到本地」</li>
+            </ul>
+        </section>
+
+        <p class="text-center text-xs text-slate-600 mt-8 mb-4">
+            数据仅存于本机 IndexedDB（库名 <span class="mono">vibe-apikey</span>），不会上传
+        </p>
+    </div>
+
+    <!-- Save modal -->
+    <div id="saveModal" class="fixed inset-0 z-40 hidden items-center justify-center p-4 modal-backdrop">
+        <div class="panel rounded-xl p-5 w-full max-w-md shadow-2xl">
+            <h3 class="text-lg font-semibold text-white mb-1">保存密钥</h3>
+            <p class="text-sm text-slate-400 mb-4">给这条密钥起个备注名，方便以后辨认</p>
+            <input id="labelInput" type="text" placeholder="例如 OpenAI / 测试环境"
+                class="w-full rounded-lg bg-[#010409] border border-[#30363d] px-3 py-2.5 text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-emerald-600 mb-4">
+            <div class="flex justify-end gap-2">
+                <button type="button" id="btnCancelSave" class="btn-ghost text-slate-300 rounded-lg px-4 py-2 text-sm">取消</button>
+                <button type="button" id="btnConfirmSave" class="btn-primary text-white font-medium rounded-lg px-4 py-2 text-sm">确认保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete modal -->
+    <div id="deleteModal" class="fixed inset-0 z-40 hidden items-center justify-center p-4 modal-backdrop">
+        <div class="panel rounded-xl p-5 w-full max-w-md shadow-2xl">
+            <h3 class="text-lg font-semibold text-white mb-1">确认删除？</h3>
+            <p class="text-sm text-slate-400 mb-2">将从本机 IndexedDB 永久移除：</p>
+            <p class="mono text-sm text-slate-300 mb-4 truncate" id="deleteLabel"></p>
+            <div class="flex justify-end gap-2">
+                <button type="button" id="btnCancelDelete" class="btn-ghost text-slate-300 rounded-lg px-4 py-2 text-sm">取消</button>
+                <button type="button" id="btnConfirmDelete" class="btn-danger rounded-lg px-4 py-2 text-sm">删除</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast panel rounded-lg px-4 py-2.5 text-sm text-emerald-300 shadow-lg"></div>
+
+    <script>
+        const DB_NAME = 'vibe-apikey';
+        const DB_VERSION = 1;
+        const STORE = 'keys';
+
+        const CHARSETS = {
+            base62: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',
+            hex: '0123456789abcdef',
+            base64url: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_',
+            alnum: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',
+            symbols: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*_-+=',
+        };
+
+        let charset = 'base62';
+        let currentKey = '';
+        let pendingDeleteId = null;
+        let db = null;
+
+        const els = {
+            keyOutput: document.getElementById('keyOutput'),
+            lenRange: document.getElementById('lenRange'),
+            lenInput: document.getElementById('lenInput'),
+            prefixInput: document.getElementById('prefixInput'),
+            btnGenerate: document.getElementById('btnGenerate'),
+            btnCopy: document.getElementById('btnCopy'),
+            btnSave: document.getElementById('btnSave'),
+            keyList: document.getElementById('keyList'),
+            savedCount: document.getElementById('savedCount'),
+            emptyState: document.getElementById('emptyState'),
+            saveModal: document.getElementById('saveModal'),
+            deleteModal: document.getElementById('deleteModal'),
+            labelInput: document.getElementById('labelInput'),
+            deleteLabel: document.getElementById('deleteLabel'),
+            toast: document.getElementById('toast'),
+        };
+
+        function openDB() {
+            return new Promise((resolve, reject) => {
+                const req = indexedDB.open(DB_NAME, DB_VERSION);
+                req.onupgradeneeded = () => {
+                    const database = req.result;
+                    if (!database.objectStoreNames.contains(STORE)) {
+                        const store = database.createObjectStore(STORE, { keyPath: 'id' });
+                        store.createIndex('createdAt', 'createdAt', { unique: false });
+                    }
+                };
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = () => reject(req.error);
+            });
+        }
+
+        function txStore(mode) {
+            return db.transaction(STORE, mode).objectStore(STORE);
+        }
+
+        function addKey(record) {
+            return new Promise((resolve, reject) => {
+                const req = txStore('readwrite').add(record);
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = () => reject(req.error);
+            });
+        }
+
+        function deleteKey(id) {
+            return new Promise((resolve, reject) => {
+                const req = txStore('readwrite').delete(id);
+                req.onsuccess = () => resolve();
+                req.onerror = () => reject(req.error);
+            });
+        }
+
+        function listKeys() {
+            return new Promise((resolve, reject) => {
+                const req = txStore('readonly').getAll();
+                req.onsuccess = () => {
+                    const rows = req.result || [];
+                    rows.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+                    resolve(rows);
+                };
+                req.onerror = () => reject(req.error);
+            });
+        }
+
+        function generateSecret(length, alphabet) {
+            const bytes = new Uint8Array(length);
+            crypto.getRandomValues(bytes);
+            let out = '';
+            for (let i = 0; i < length; i++) {
+                out += alphabet[bytes[i] % alphabet.length];
+            }
+            return out;
+        }
+
+        function showToast(msg) {
+            els.toast.textContent = msg;
+            els.toast.classList.add('show');
+            clearTimeout(showToast._t);
+            showToast._t = setTimeout(() => els.toast.classList.remove('show'), 1800);
+        }
+
+        function maskKey(value) {
+            if (!value || value.length <= 12) return value;
+            return value.slice(0, 6) + '…' + value.slice(-4);
+        }
+
+        function formatTime(iso) {
+            try {
+                return new Date(iso).toLocaleString('zh-CN', {
+                    year: 'numeric', month: '2-digit', day: '2-digit',
+                    hour: '2-digit', minute: '2-digit',
+                });
+            } catch {
+                return iso;
+            }
+        }
+
+        function setModal(el, open) {
+            el.classList.toggle('hidden', !open);
+            el.classList.toggle('flex', open);
+        }
+
+        const LEN_MIN = 1;
+        const LEN_MAX = 512;
+
+        function clampLen(n) {
+            const v = Math.floor(Number(n));
+            if (!Number.isFinite(v)) return 32;
+            return Math.min(LEN_MAX, Math.max(LEN_MIN, v));
+        }
+
+        function syncLen(value, source) {
+            const len = clampLen(value);
+            if (source !== 'input') els.lenInput.value = String(len);
+            if (source !== 'range') els.lenRange.value = String(len);
+            return len;
+        }
+
+        function doGenerate() {
+            const len = syncLen(els.lenInput.value || els.lenRange.value);
+            const prefix = (els.prefixInput.value || '').trim();
+            const body = generateSecret(len, CHARSETS[charset]);
+            currentKey = prefix + body;
+            els.keyOutput.textContent = currentKey;
+            els.btnCopy.disabled = false;
+            els.btnSave.disabled = false;
+        }
+
+        async function renderList() {
+            const rows = await listKeys();
+            els.savedCount.textContent = String(rows.length);
+
+            if (!rows.length) {
+                els.keyList.innerHTML = '';
+                const li = document.createElement('li');
+                li.className = 'text-sm text-slate-500 py-6 text-center';
+                li.id = 'emptyState';
+                li.textContent = '暂无保存的密钥，生成后点击「保存到本地」';
+                els.keyList.appendChild(li);
+                return;
+            }
+
+            els.keyList.innerHTML = '';
+            for (const row of rows) {
+                const li = document.createElement('li');
+                li.className = 'rounded-lg border border-[#30363d] bg-[#010409] p-3 md:p-4';
+                li.innerHTML = `
+                    <div class="flex items-start justify-between gap-3 mb-2">
+                        <div class="min-w-0">
+                            <p class="font-medium text-slate-200 truncate">${escapeHtml(row.label || '未命名')}</p>
+                            <p class="text-xs text-slate-500 mt-0.5">${formatTime(row.createdAt)} · ${row.charset || ''} · ${row.length || row.value.length} 位</p>
+                        </div>
+                        <div class="flex gap-1.5 shrink-0">
+                            <button type="button" data-copy="${escapeAttr(row.id)}" class="btn-ghost text-slate-300 rounded-md px-2.5 py-1.5 text-xs">复制</button>
+                            <button type="button" data-del="${escapeAttr(row.id)}" class="btn-danger rounded-md px-2.5 py-1.5 text-xs">删除</button>
+                        </div>
+                    </div>
+                    <p class="mono text-xs md:text-sm text-emerald-500/90 break-all">${escapeHtml(row.value)}</p>
+                `;
+                els.keyList.appendChild(li);
+            }
+
+            els.keyList.querySelectorAll('[data-copy]').forEach((btn) => {
+                btn.addEventListener('click', async () => {
+                    const id = btn.getAttribute('data-copy');
+                    const row = rows.find((r) => r.id === id);
+                    if (!row) return;
+                    await navigator.clipboard.writeText(row.value);
+                    showToast('已复制到剪贴板');
+                });
+            });
+
+            els.keyList.querySelectorAll('[data-del]').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const id = btn.getAttribute('data-del');
+                    const row = rows.find((r) => r.id === id);
+                    if (!row) return;
+                    pendingDeleteId = id;
+                    els.deleteLabel.textContent = `${row.label || '未命名'} · ${maskKey(row.value)}`;
+                    setModal(els.deleteModal, true);
+                });
+            });
+        }
+
+        function escapeHtml(s) {
+            return String(s)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        function escapeAttr(s) {
+            return escapeHtml(s).replace(/'/g, '&#39;');
+        }
+
+        // Events
+        els.lenRange.addEventListener('input', () => {
+            syncLen(els.lenRange.value, 'range');
+        });
+
+        els.lenInput.addEventListener('input', () => {
+            const raw = els.lenInput.value;
+            if (raw === '') return;
+            syncLen(raw, 'input');
+        });
+
+        els.lenInput.addEventListener('change', () => {
+            syncLen(els.lenInput.value || 32);
+        });
+
+        els.lenInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') doGenerate();
+        });
+
+        document.getElementById('charsetChips').addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-set]');
+            if (!btn) return;
+            charset = btn.dataset.set;
+            document.querySelectorAll('#charsetChips .chip').forEach((c) => {
+                c.classList.toggle('active', c === btn);
+                c.classList.toggle('text-slate-300', c !== btn);
+            });
+        });
+
+        els.btnGenerate.addEventListener('click', doGenerate);
+
+        els.btnCopy.addEventListener('click', async () => {
+            if (!currentKey) return;
+            await navigator.clipboard.writeText(currentKey);
+            showToast('已复制到剪贴板');
+        });
+
+        els.btnSave.addEventListener('click', () => {
+            if (!currentKey) return;
+            els.labelInput.value = '';
+            setModal(els.saveModal, true);
+            els.labelInput.focus();
+        });
+
+        document.getElementById('btnCancelSave').addEventListener('click', () => {
+            setModal(els.saveModal, false);
+        });
+
+        document.getElementById('btnConfirmSave').addEventListener('click', async () => {
+            if (!currentKey) return;
+            const label = (els.labelInput.value || '').trim() || '未命名';
+            const record = {
+                id: crypto.randomUUID(),
+                label,
+                value: currentKey,
+                charset,
+                length: currentKey.length,
+                createdAt: new Date().toISOString(),
+            };
+            await addKey(record);
+            setModal(els.saveModal, false);
+            showToast('已保存到 IndexedDB');
+            await renderList();
+        });
+
+        document.getElementById('btnCancelDelete').addEventListener('click', () => {
+            pendingDeleteId = null;
+            setModal(els.deleteModal, false);
+        });
+
+        document.getElementById('btnConfirmDelete').addEventListener('click', async () => {
+            if (!pendingDeleteId) return;
+            await deleteKey(pendingDeleteId);
+            pendingDeleteId = null;
+            setModal(els.deleteModal, false);
+            showToast('已删除');
+            await renderList();
+        });
+
+        els.saveModal.addEventListener('click', (e) => {
+            if (e.target === els.saveModal) setModal(els.saveModal, false);
+        });
+        els.deleteModal.addEventListener('click', (e) => {
+            if (e.target === els.deleteModal) {
+                pendingDeleteId = null;
+                setModal(els.deleteModal, false);
+            }
+        });
+
+        (async function init() {
+            try {
+                db = await openDB();
+                await renderList();
+                doGenerate();
+            } catch (err) {
+                console.error(err);
+                els.keyOutput.textContent = 'IndexedDB 不可用，请使用 http/https 环境打开本页';
+                showToast('IndexedDB 初始化失败');
+            }
+        })();
+    </script>
+</body>
+</html>

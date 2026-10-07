@@ -38,6 +38,7 @@ Vibe Lab 是一个**零构建、纯静态**的 Web 实验沙盒。每个子项�
 | Spark Survey Engine | [`surv_mvp.html`](surv_mvp.html) | 问卷调查 MVP，多题型与逻辑跳转 |
 | AI 视觉百科 | [`word/index.html`](word/index.html) | AI 驱动的视觉识别与知识百科 |
 | Zotero 结构 | [`zotero.html`](zotero.html) | Zotero 文献管理系统结构展示 |
+| API Key 生成器 | [`apikey-gen.html`](apikey-gen.html) | 加密安全随机密钥串，IndexedDB 本地增删 |
 
 ### 📱 平台与运行时
 
@@ -88,7 +89,8 @@ vibe-lab/
 ├── surv_mvp.html           # 问卷引擎
 ├── webr-.html              # WebR 执行器
 ├── wechat-svg.html         # 微信 SVG 动画
-└── zotero.html             # Zotero 结构
+├── zotero.html             # Zotero 结构
+└── apikey-gen.html         # API Key 随机生成（IndexedDB）
 ```
 
 ## 🔧 技术栈
